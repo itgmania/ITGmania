@@ -208,8 +208,12 @@ if(WIN32)
     file(REMOVE "${SM_PROGRAM_DIR}/${dll}")
     file(COPY "${SM_EXTERN_DIR}/ffmpeg-w32/${SM_WIN32_ARCH}/${dll}" DESTINATION "${SM_PROGRAM_DIR}/")
   endforeach()
+  link_libraries(${SM_EXTERN_DIR}/discord-rpc-2.0.1/lib/${SM_WIN32_ARCH}/discord-rpc.lib)
+  include_directories(${SM_EXTERN_DIR}/discord-rpc-2.0.1/include)
 elseif(MACOSX)
   include("${SM_CMAKE_DIR}/SetupFfmpeg.cmake")
+  link_libraries(${SM_EXTERN_DIR}/discord-rpc-2.0.1/lib/libdiscord-rpcMac.a)
+  include_directories(${SM_EXTERN_DIR}/discord-rpc-2.0.1/include)
 
   set(WITH_CRASH_HANDLER TRUE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "11")
@@ -338,6 +342,8 @@ elseif(LINUX OR BSD)
 
   set(OpenGL_GL_PREFERENCE GLVND)
   find_package(OpenGL REQUIRED)
+  link_libraries(${SM_EXTERN_DIR}/discord-rpc-2.0.1/lib/libdiscord-rpc.a)
+  include_directories(${SM_EXTERN_DIR}/discord-rpc-2.0.1/include)
 endif(WIN32) # LINUX OR BSD, APPLE
 
 configure_file("${SM_SRC_DIR}/config.in.hpp"

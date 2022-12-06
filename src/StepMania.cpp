@@ -335,6 +335,7 @@ void ShutdownGame()
 	RageUtil::SafeDelete( FILEMAN );
 	RageUtil::SafeDelete( LUA );
 	RageUtil::SafeDelete( HOOKS );
+	Discord_Shutdown();
 }
 
 static void HandleException( const RString &sError )
