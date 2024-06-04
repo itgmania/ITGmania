@@ -240,6 +240,10 @@ void SetOffset(SongTagInfo& info)
 {
 	info.song->m_SongTiming.m_fBeat0OffsetInSeconds = StringToFloat((*info.params)[1]);
 }
+void SetSyncBias(SongTagInfo& info)
+{
+	info.song->m_SongTiming.m_SyncBias = StringToSyncBias((*info.params)[1]);
+}
 void SetSongStops(SongTagInfo& info)
 {
 	info.loader->ProcessStops(info.song->m_SongTiming, (*info.params)[1]);
@@ -499,6 +503,9 @@ void SetStepsAttacks(StepsTagInfo& info)
 		info.loader->ProcessAttacks(info.steps->m_Attacks, *info.params);
 	}
 }
+// steps offset/sync bias actually does not make any sense for me
+// there is single audio file and it has single offset
+// implement this anyway
 void SetStepsOffset(StepsTagInfo& info)
 {
 	if(info.song->m_fVersion >= VERSION_SPLIT_TIMING || info.for_load_edit)
@@ -507,6 +514,15 @@ void SetStepsOffset(StepsTagInfo& info)
 		info.has_own_timing = true;
 	}
 }
+void SetStepsSyncBias(StepsTagInfo& info)
+{
+	if(info.song->m_fVersion >= VERSION_SPLIT_TIMING || info.for_load_edit)
+	{
+		info.timing->m_SyncBias = StringToSyncBias((*info.params)[1]);
+		info.has_own_timing = true;
+	}
+}
+
 void SetStepsDisplayBPM(StepsTagInfo& info)
 {
 	// #DISPLAYBPM:[xxx][xxx:xxx]|[*];
@@ -574,6 +590,7 @@ struct ssc_parser_helper_t
 		song_tag_handlers["KEYSOUNDS"]= &SetKeysounds;
 		song_tag_handlers["ATTACKS"]= &SetAttacks;
 		song_tag_handlers["OFFSET"]= &SetOffset;
+		song_tag_handlers["SYNCBIAS"]= &SetSyncBias;
 		/* Below are the song based timings that should only be used
 		 * if the steps do not have their own timing. */
 		song_tag_handlers["STOPS"]= &SetSongStops;
@@ -627,6 +644,7 @@ struct ssc_parser_helper_t
 		 * as the Song's timing. No other changes are required. */
 		steps_tag_handlers["ATTACKS"]= &SetStepsAttacks;
 		steps_tag_handlers["OFFSET"]= &SetStepsOffset;
+		steps_tag_handlers["SYNCBIAS"]= &SetStepsSyncBias;
 		steps_tag_handlers["DISPLAYBPM"]= &SetStepsDisplayBPM;
 
 		load_note_data_handlers["VERSION"]= LNDID_version;
