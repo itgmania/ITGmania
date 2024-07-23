@@ -60,6 +60,7 @@ Steps::Steps(Song *song): m_StepsType(StepsType_Invalid), m_pSong(song),
 	m_bAreCachedRadarValuesJustLoaded(false),
 	m_bAreCachedTechCountsValuesJustLoaded(false),
 	m_bAreCachedMeasureInfoJustLoaded(false),
+	m_bIsCachedGrooveStatsHashJustLoaded(false),
 	m_sCredit(""), displayBPMType(DISPLAY_BPM_ACTUAL),
 	specifiedBPMMin(0), specifiedBPMMax(0) {}
 
