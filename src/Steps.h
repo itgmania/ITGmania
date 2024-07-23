@@ -153,6 +153,7 @@ public:
 	void SetCachedRadarValues( const RadarValues v[NUM_PLAYERS] );
 	void SetCachedTechCounts(const TechCounts ts[NUM_PLAYERS]);
 	void SetCachedMeasureInfo(const MeasureInfo ms[NUM_PLAYERS]);
+	void SetCachedGrooveStatsHash(const RString key);
 	float PredictMeter() const;
 
 	unsigned GetHash() const;

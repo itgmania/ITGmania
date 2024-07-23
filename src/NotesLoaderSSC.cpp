@@ -414,7 +414,7 @@ void SetMeasureInfo(StepsTagInfo& info)
 	{
 		std::vector<RString> values;
 		split((*info.params)[1], "|", values, true);
-
+		
 		MeasureInfo v[NUM_PLAYERS];
 		FOREACH_PlayerNumber(pn)
 		{
@@ -427,6 +427,16 @@ void SetMeasureInfo(StepsTagInfo& info)
 		// just recalc at time.
 	}
 	info.ssc_format= true;
+}
+
+void SetGrooveStatsHash(StepsTagInfo& info)
+{
+	if (info.from_cache || info.for_load_edit)
+	{
+		RString value = (*info.params)[1];
+		info.steps->SetCachedGrooveStatsHash(value);
+	}
+	info.ssc_format = true;
 }
 
 void SetCredit(StepsTagInfo& info)
@@ -671,7 +681,7 @@ struct ssc_parser_helper_t
 		steps_tag_handlers["LABELS"]= &SetStepsLabels;
 		steps_tag_handlers["TECHCOUNTS"] = &SetTechCounts;
 		steps_tag_handlers["MEASUREINFO"] = &SetMeasureInfo;
-
+		steps_tag_handlers["GROOVESTATSHASH"] = &SetGrooveStatsHash;
 		/* If this is called, the chart does not use the same attacks
 		 * as the Song's timing. No other changes are required. */
 		steps_tag_handlers["ATTACKS"]= &SetStepsAttacks;
