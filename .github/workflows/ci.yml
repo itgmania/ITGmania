@@ -36,8 +36,10 @@ jobs:
           libx11-dev
           libxrandr-dev
           libxtst-dev
-          libsdl3-dev
           nasm
+      # This can be replaced with libsdl3-dev once the package is available
+      - name: Configure & Install SDL3
+        run: cd extern/SDL && cmake -S . -B build && cmake --build build --parallel "$(nproc)"
       - name: Configure
         run: cmake -B build -DWITH_FFMPEG_JOBS="$(nproc)"
       - name: Build
