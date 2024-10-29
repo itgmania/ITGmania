@@ -286,7 +286,8 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 	{
 		return (mode.dmFields & DM_PELSWIDTH) && (mode.dmFields & DM_PELSHEIGHT)
 			&& (mode.dmFields & DM_DISPLAYFREQUENCY)
-			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL));
+			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL)
+			&& (mode.dmFields & DM_POSITION));
 	};
 
 	g_CurrentParams = p;
@@ -378,21 +379,22 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 	const int iWidth = WindowRect.right - WindowRect.left;
 	const int iHeight = WindowRect.bottom - WindowRect.top;
 
-	// If windowed, center the window.
 	int x = pos.x, y = pos.y;
-	if( p.windowed )
+	/* If windowed and not fullscreen borderless, center the window on the primary display.
+	 * Otherwise the window will be centered on the last display option that was hovered before selecting Windowed in Options*/
+	if( p.windowed && !p.bWindowIsFullscreenBorderless)
 	{
-		HMONITOR hMonitor;
-		MONITORINFO mi;
-		RECT rc;
-		hMonitor = MonitorFromRect(&WindowRect, MONITOR_DEFAULTTONEAREST);
-
-		mi.cbSize = sizeof(mi);
-		GetMonitorInfo(hMonitor, &mi);
-		rc = mi.rcMonitor;
+		if (EnumDisplaySettingsEx(NULL, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode))
+		{
+			WindowRect.left = devmode.dmPosition.x;
+			WindowRect.top = devmode.dmPosition.y;
+			WindowRect.right = devmode.dmPosition.x + devmode.dmPelsWidth;
+			WindowRect.bottom = devmode.dmPosition.y + devmode.dmPelsHeight;
+			resetDeviceMode(devmode);
+		}
 		
-		x = rc.left + (rc.right - rc.left - iWidth)/2;
-		y = rc. top + (rc.bottom -rc.top - iHeight) / 2;
+		x = WindowRect.left + (WindowRect.right - WindowRect.left - iWidth) / 2;
+		y = WindowRect.top + (WindowRect.bottom - WindowRect.top - iHeight) / 2;
 	}
 
 	/* Move and resize the window. SWP_FRAMECHANGED causes the above
@@ -565,28 +567,21 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 	auto deviceModeIsValid = [=]( const DEVMODE& mode ) {
 		return (mode.dmFields & DM_PELSWIDTH) && (mode.dmFields & DM_PELSHEIGHT)
 			&& (mode.dmFields & DM_DISPLAYFREQUENCY)
-			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL));
+			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL)
+			&& (mode.dmFields & DM_POSITION));
 	};
 
 	DEVMODE devmode;
 	resetDeviceMode(devmode);
 
-	
 	DWORD deviceIter = 0;
 	DISPLAY_DEVICE dd;
 	ZeroMemory(&dd, sizeof(dd));
 	dd.cb = sizeof(dd);
 
-	// Top left corner of the display
-	POINTL pos;
-	pos.x = 0;
-	pos.y = 0;
-
 	// Loop through all displays and their display settings to create a DisplaySpec for each display.
 	while (EnumDisplayDevices(NULL, deviceIter++, &dd, 0))
 	{
-		char sDeviceName[33];
-		strcpy_s(sDeviceName, sizeof(sDeviceName), dd.DeviceName);
 		int mode = 0;
 		std::set<DisplayMode> dispModes;
 
@@ -596,19 +591,18 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 			{
 				DisplayMode m = { devmode.dmPelsWidth, devmode.dmPelsHeight, static_cast<double> (devmode.dmDisplayFrequency) };
 				dispModes.insert(m);
-				pos = devmode.dmPosition;
 			}
 			resetDeviceMode(devmode);
 		}
 
 		//Clean up the device name to store as the DisplaySpec ID
-		RString trimmed;
-		trimmed = sDeviceName;
-		TrimRight(trimmed);
+		RString sDeviceName;
+		sDeviceName = dd.DeviceName;
+		TrimRight(sDeviceName);
 
 		//Make the DisplaySpec Name more friendly by removing the "\\.\" prefix on most Windows display devices
 		RString modeName;
-		modeName = trimmed;
+		modeName = sDeviceName;
 		TrimLeft(modeName, "\\");
 		TrimLeft(modeName, ".");
 		TrimLeft(modeName, "\\");
@@ -618,17 +612,19 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 		if (EnumDisplaySettingsEx(dd.DeviceName, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode))
 		{
 			DisplayMode m = { devmode.dmPelsWidth, devmode.dmPelsHeight, static_cast<double> (devmode.dmDisplayFrequency) };
-			RectI bounds = { pos.x, pos.y, static_cast<int> (m.width), static_cast<int> (m.height) };
-			out.insert(DisplaySpec(trimmed, modeName, dispModes, m, bounds));
+			RectI bounds = { devmode.dmPosition.x, devmode.dmPosition.y, static_cast<int> (m.width), static_cast<int> (m.height) };
+			out.insert(DisplaySpec(sDeviceName, modeName, dispModes, m, bounds));
 		}
 		else if (!dispModes.empty())
 		{
 			LOG->Warn("Could not retrieve valid current display mode");
-			out.insert(DisplaySpec(trimmed, modeName, *dispModes.begin()));
+			out.insert(DisplaySpec(sDeviceName, modeName, *dispModes.begin()));
 		}
 	}
 	if (out.size() == 0)
 		LOG->Warn("Could not retrieve *any* DisplaySpec's!");
+	ZeroMemory(&dd, sizeof(dd));
+	dd.cb = sizeof(dd);
 }
 
 /*
