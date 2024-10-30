@@ -47,10 +47,12 @@
 static Preference<float> g_iDefaultRecordLength( "DefaultRecordLength", 4 );
 static Preference<bool> g_bEditorShowBGChangesPlay( "EditorShowBGChangesPlay", true );
 
-/** @brief How long must the button be held to generate a hold in record mode? */
-constexpr uint_fast64_t record_hold_default = 300000; // 0.3 seconds in microseconds
-uint_fast64_t record_hold_seconds = record_hold_default;
-constexpr uint_fast64_t time_between_autosave = 300000000; // 300 seconds in microseconds
+/** @brief How long must the button be held to generate a hold in record mode?
+  * Note this must be a float, if it isn't then record mode can't tell if you're
+  * trying to input a hold or not. */
+constexpr static float record_hold_default= 0.3f;
+float record_hold_seconds = record_hold_default;
+constexpr static float time_between_autosave= 300.0f; // 5 minutes. -Kyz
 
 #define PLAYER_X		(SCREEN_CENTER_X)
 #define PLAYER_Y		(SCREEN_CENTER_Y)
@@ -1681,8 +1683,8 @@ void ScreenEdit::Update( float fDeltaTime )
 
 	if(m_EditState == STATE_EDITING)
 	{
-		if(IsDirty() && m_next_autosave_time > -1000000 &&
-			RageTimer::GetTimeSinceStartMicroseconds() > m_next_autosave_time)
+		if(IsDirty() && m_next_autosave_time > -1.0f &&
+			RageTimer::GetTimeSinceStart() > m_next_autosave_time)
 		{
 			PerformSave(true);
 		}
@@ -4352,7 +4354,7 @@ void ScreenEdit::HandleScreenMessage( const ScreenMessage SM )
 	else if( SM == SM_AutoSaveSuccessful )
 	{
 		LOG->Trace("AutoSave successful.");
-		m_next_autosave_time= RageTimer::GetTimeSinceStartMicroseconds() + time_between_autosave;
+		m_next_autosave_time= RageTimer::GetTimeSinceStart() + time_between_autosave;
 		SCREENMAN->SystemMessage(AUTOSAVE_SUCCESSFUL);
 	}
 	else if( SM == SM_SaveFailed ) // save failed; stay in the editor
@@ -4428,19 +4430,19 @@ void ScreenEdit::SetDirty(bool dirty)
 	if(EDIT_MODE.GetValue() != EditMode_Full)
 	{
 		m_dirty= false;
-		m_next_autosave_time= -1000000;
+		m_next_autosave_time= -1.0f;
 		return;
 	}
 	if(dirty)
 	{
 		if(!m_dirty)
 		{
-			m_next_autosave_time= RageTimer::GetTimeSinceStartMicroseconds() + time_between_autosave;
+			m_next_autosave_time= RageTimer::GetTimeSinceStart() + time_between_autosave;
 		}
 	}
 	else
 	{
-		m_next_autosave_time= -1000000;
+		m_next_autosave_time= -1.0f;
 	}
 	m_dirty= dirty;
 }
