@@ -1058,7 +1058,9 @@ static MenuDef g_SongInformation(
 // it's the only way to make it visible to EnabledIfClipboardTimingIsSafe for
 // making sure it's safe to paste as the timing data for the Steps/Song. -Kyz
 static TimingData* clipboard_full_timing= nullptr;
-static bool EnabledIfClipboardTimingIsSafe();
+
+// Duplicate ?
+// static bool EnabledIfClipboardTimingIsSafe();
 static bool EnabledIfClipboardTimingIsSafe()
 {
 	return clipboard_full_timing != nullptr && clipboard_full_timing->IsSafeFullTiming();
@@ -3414,7 +3416,7 @@ void ScreenEdit::TransitionEditState( EditState em )
 			// Substitute the song timing for the step timing during
 			// preview if we're in song mode
 			backupStepTiming = GAMESTATE->m_pCurSteps[main_player_]->m_Timing;
-			GAMESTATE->m_pCurSteps[main_player_]->m_Timing.Clear();
+			GAMESTATE->m_pCurSteps[main_player_]->m_Timing.ClearTimingSegments();
 		}
 
 		/* Reset the note skin, in case preferences have changed. */
@@ -4313,7 +4315,7 @@ void ScreenEdit::HandleScreenMessage( const ScreenMessage SM )
 		if( ScreenPrompt::s_LastAnswer == ANSWER_YES )
 		{
 			SaveUndo();
-			m_pSteps->m_Timing.Clear();
+			m_pSteps->m_Timing.ClearTimingSegments();
 			SetDirty( true );
 		}
 	}
@@ -6021,7 +6023,7 @@ void ScreenEdit::HandleTimingDataChangeChoice(TimingDataChangeChoice choice,
 	switch(m_timing_change_menu_purpose)
 	{
 		case menu_is_for_copying:
-			clipboardFullTiming.Clear();
+			clipboardFullTiming.ClearTimingSegments();
 			GetAppropriateTiming().CopyRange(begin, end, change_type, 0, clipboardFullTiming);
 			break;
 		case menu_is_for_shifting:
