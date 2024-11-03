@@ -299,7 +299,6 @@ static void DoPlayOnceFromDir( RString sPath )
 		sPath += "/";
 
 	std::vector<RString> arraySoundFiles;
-	GetDirListing( sPath + "*.mp3", arraySoundFiles );
 	GetDirListing( sPath + "*.wav", arraySoundFiles );
 	GetDirListing( sPath + "*.ogg", arraySoundFiles );
 	GetDirListing( sPath + "*.oga", arraySoundFiles );

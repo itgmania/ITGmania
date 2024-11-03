@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "RageSoundReader_WAV.h"
-#include "RageSoundReader_MP3.h"
 #include "RageSoundReader_Vorbisfile.h"
 
 RageSoundReader_FileReader *RageSoundReader_FileReader::TryOpenFile( RageFileBasic *pFile, RString &error, RString format, bool &bKeepTrying )
@@ -18,9 +17,6 @@ RageSoundReader_FileReader *RageSoundReader_FileReader::TryOpenFile( RageFileBas
 
 	if( !format.CompareNoCase("wav") )
 		Sample = new RageSoundReader_WAV;
-
-	if( !format.CompareNoCase("mp3") )
-		Sample = new RageSoundReader_MP3;
 
 	if( !format.CompareNoCase("oga") || !format.CompareNoCase("ogg") )
 		Sample = new RageSoundReader_Vorbisfile;

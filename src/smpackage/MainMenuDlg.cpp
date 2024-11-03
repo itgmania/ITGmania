@@ -119,13 +119,13 @@ void MainMenuDlg::OnCreateSong()
 	// TODO: Add your control notification handler code here
 	ASSERT(0);
 	// fix compile
-	CFileDialog dialog (
+	CFileDialog dialog(
 		TRUE,	// file open?
 		NULL,	// default file extension
 		NULL,	// default file name
 		OFN_HIDEREADONLY | OFN_NOCHANGEDIR,		// flags
-		ConvertUTF8ToACP(MUSIC_FILE.GetValue()+" (*.mp3;*.ogg)|*.mp3;*.ogg|||").c_str()
-		);
+		ConvertUTF8ToACP(MUSIC_FILE.GetValue() + " (*.ogg)|*.ogg|||").c_str()
+	);
 	int iRet = dialog.DoModal();
 	RString sMusicFile = dialog.GetPathName();
 	if( iRet != IDOK )

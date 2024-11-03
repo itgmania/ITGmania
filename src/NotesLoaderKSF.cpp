@@ -539,7 +539,6 @@ static bool LoadGlobalData( const RString &sPath, Song &out, bool &bKIUCompliant
 	// changed up there in case of something is found inside the SONGFILE tag in the head ksf -DaisuMaster
 	// search for music with song in the file name
 	std::vector<RString> arrayPossibleMusic;
-	GetDirListing( out.GetSongDir() + RString("song.mp3"), arrayPossibleMusic );
 	GetDirListing( out.GetSongDir() + RString("song.oga"), arrayPossibleMusic );
 	GetDirListing( out.GetSongDir() + RString("song.ogg"), arrayPossibleMusic );
 	GetDirListing( out.GetSongDir() + RString("song.wav"), arrayPossibleMusic );

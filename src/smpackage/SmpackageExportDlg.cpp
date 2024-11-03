@@ -183,7 +183,6 @@ static bool ExportPackage( const RString &sPackageName, const RString &sSourceIn
 			sExt.CompareNoCase("avi")==0 ||
 			sExt.CompareNoCase("mpeg")==0 ||
 			sExt.CompareNoCase("mpg")==0 ||
-			sExt.CompareNoCase("mp3")==0 ||
 			sExt.CompareNoCase("oga")==0 ||
 			sExt.CompareNoCase("ogg")==0 ||
 			sExt.CompareNoCase("gif")==0 ||

@@ -179,7 +179,7 @@ BEGIN
     LTEXT           "Create .smzip package files to share with other users.",
                     IDC_STATIC,109,190,213,18
     PUSHBUTTON      "Create Song",IDC_CREATE_SONG,14,211,91,15
-    LTEXT           "Create a new song in from your favorite mp3 or ogg music file.",
+    LTEXT           "Create a new song in from your favorite ogg music file.",
                     IDC_STATIC,109,211,213,20
     GROUPBOX        "Troubleshooting",IDC_STATIC,7,73,318,99
     PUSHBUTTON      "Change Preferences",IDC_CHANGE_PREFERENCES,14,85,91,15
