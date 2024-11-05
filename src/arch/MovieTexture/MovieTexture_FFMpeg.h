@@ -73,7 +73,7 @@ public:
 	MovieDecoder_FFMpeg();
 	~MovieDecoder_FFMpeg();
 
-	RString Open(RString sFile);
+	RString Open(RString file);
 	void Close();
 
 	// Rewind sends the reset signal to DecodeMovie. See DecodeMovie
@@ -87,7 +87,7 @@ public:
 	// This draws a frame from the buffer onto the provided RageSurface.
 	// Returns 1 if the last frame of the movie, -1 if there's an issue
 	// with the frame and we should skip.
-	int GetFrame(RageSurface* pOut);
+	int GetFrame(RageSurface* surface_out);
 
 	// Handles the next packet in decoding.
 	int HandleNextPacket();

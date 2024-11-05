@@ -427,11 +427,11 @@ int MovieDecoder_FFMpeg::DecodePacketToFrame() {
 	return 0; /* packet done */
 }
 
-int MovieDecoder_FFMpeg::GetFrame(RageSurface* pSurface)
+int MovieDecoder_FFMpeg::GetFrame(RageSurface* surface_out)
 {
 	avcodec::AVFrame pict;
-	pict.data[0] = (unsigned char*)pSurface->pixels;
-	pict.linesize[0] = pSurface->pitch;
+	pict.data[0] = (unsigned char*)surface_out->pixels;
+	pict.linesize[0] = surface_out->pitch;
 
 	/* XXX 1: Do this in one of the Open() methods instead?
 	 * XXX 2: The problem of doing this in Open() is that m_AVTexfmt is not
@@ -525,7 +525,7 @@ static int64_t AVIORageFile_Seek(void* opaque, int64_t offset, int whence)
 	return f->Seek((int)offset, whence);
 }
 
-RString MovieDecoder_FFMpeg::Open(RString sFile)
+RString MovieDecoder_FFMpeg::Open(RString file)
 {
 	av_format_context_ = avcodec::avformat_alloc_context();
 	if (!av_format_context_)
@@ -533,10 +533,10 @@ RString MovieDecoder_FFMpeg::Open(RString sFile)
 
 	RageFile* f = new RageFile;
 
-	if (!f->Open(sFile, RageFile::READ))
+	if (!f->Open(file, RageFile::READ))
 	{
 		RString errorMessage = f->GetError();
-		RString error = ssprintf("MovieDecoder_FFMpeg: Error opening \"%s\": %s", sFile.c_str(), errorMessage.c_str());
+		RString error = ssprintf("MovieDecoder_FFMpeg: Error opening \"%s\": %s", file.c_str(), errorMessage.c_str());
 		delete f;
 		return error;
 	}
@@ -544,13 +544,13 @@ RString MovieDecoder_FFMpeg::Open(RString sFile)
 	av_buffer_ = (unsigned char*)avcodec::av_malloc(STEPMANIA_FFMPEG_BUFFER_SIZE);
 	av_io_context_ = avcodec::avio_alloc_context(av_buffer_, STEPMANIA_FFMPEG_BUFFER_SIZE, 0, f, AVIORageFile_ReadPacket, nullptr, AVIORageFile_Seek);
 	av_format_context_->pb = av_io_context_;
-	int ret = avcodec::avformat_open_input(&av_format_context_, sFile.c_str(), nullptr, nullptr);
+	int ret = avcodec::avformat_open_input(&av_format_context_, file.c_str(), nullptr, nullptr);
 	if (ret < 0)
-		return RString(averr_ssprintf(ret, "AVCodec: Couldn't open \"%s\"", sFile.c_str()));
+		return RString(averr_ssprintf(ret, "AVCodec: Couldn't open \"%s\"", file.c_str()));
 
 	ret = avcodec::avformat_find_stream_info(av_format_context_, nullptr);
 	if (ret < 0)
-		return RString(averr_ssprintf(ret, "AVCodec (%s): Couldn't find codec parameters", sFile.c_str()));
+		return RString(averr_ssprintf(ret, "AVCodec (%s): Couldn't find codec parameters", file.c_str()));
 
 	int stream_idx = avcodec::av_find_best_stream(av_format_context_, avcodec::AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
 	if (stream_idx < 0 ||
@@ -567,7 +567,7 @@ RString MovieDecoder_FFMpeg::Open(RString sFile)
 
 	RString sError = OpenCodec();
 	if (!sError.empty())
-		return ssprintf("AVCodec (%s): %s", sFile.c_str(), sError.c_str());
+		return ssprintf("AVCodec (%s): %s", file.c_str(), sError.c_str());
 
 	LOG->Trace("Bitrate: %i", static_cast<int>(av_stream_codec_->bit_rate));
 	LOG->Trace("Codec pixel format: %s", avcodec::av_get_pix_fmt_name(av_stream_codec_->pix_fmt));

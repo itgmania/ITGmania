@@ -19,43 +19,43 @@
 #endif
 
 
-static Preference<bool> g_bMovieTextureDirectUpdates( "MovieTextureDirectUpdates", true );
+static Preference<bool> g_bMovieTextureDirectUpdates("MovieTextureDirectUpdates", true);
 
-MovieTexture_Generic::MovieTexture_Generic( RageTextureID ID, MovieDecoder *pDecoder ):
-	RageMovieTexture( ID )
+MovieTexture_Generic::MovieTexture_Generic(RageTextureID ID, MovieDecoder* pDecoder) :
+	RageMovieTexture(ID)
 {
-	LOG->Trace( "MovieTexture_Generic::MovieTexture_Generic(%s)", ID.filename.c_str() );
+	LOG->Trace("MovieTexture_Generic::MovieTexture_Generic(%s)", ID.filename.c_str());
 
-	m_pDecoder = pDecoder;
+	decoder_ = pDecoder;
 
-	m_uTexHandle = 0;
-	m_pRenderTarget = nullptr;
-	m_pTextureIntermediate = nullptr;
-	m_bLoop = true;
-	m_pSurface = nullptr;
-	m_pTextureLock = nullptr;
-	m_fRate = 1;
-	m_fClock = 0;
-	m_pSprite = new Sprite;
+	texture_handle_ = 0;
+	render_target_ = nullptr;
+	intermediate_texture_ = nullptr;
+	loop_ = true;
+	surface_ = nullptr;
+	texture_lock_ = nullptr;
+	rate_ = 1;
+	clock_ = 0;
+	sprite_ = new Sprite;
 }
 
 RString MovieTexture_Generic::Init()
 {
-	RString sError = m_pDecoder->Open(GetID().filename);
+	RString sError = decoder_->Open(GetID().filename);
 	if (sError != "")
 		return sError;
 
 	CreateTexture();
 	CreateFrameRects();
-	m_pDecoder->SetLooping(m_bLoop);
+	decoder_->SetLooping(loop_);
 
-	decoding_thread = std::make_unique<std::thread>([this]() {
+	decoding_thread_ = std::make_unique<std::thread>([this]() {
 		LOG->Trace("Beginning to decode video file \"%s\"", GetID().filename.c_str());
 		auto timer = RageTimer();
 
-		int ret = m_pDecoder->DecodeMovie();
+		int ret = decoder_->DecodeMovie();
 		if (ret == -1) {
-			m_failure = true;
+			failure_ = true;
 		}
 
 		LOG->Trace("Done decoding video file \"%s\", took %f seconds", GetID().filename.c_str(), timer.Ago());
@@ -72,50 +72,50 @@ RString MovieTexture_Generic::Init()
 
 MovieTexture_Generic::~MovieTexture_Generic()
 {
-	if (m_pDecoder) {
-		m_pDecoder->Cancel();
-		decoding_thread->join();
-		m_pDecoder->Close();
+	if (decoder_) {
+		decoder_->Cancel();
+		decoding_thread_->join();
+		decoder_->Close();
 	}
 
-	/* m_pSprite may reference the texture; delete it before DestroyTexture. */
-	delete m_pSprite;
+	/* sprite_ may reference the texture; delete it before DestroyTexture. */
+	delete sprite_;
 
 	DestroyTexture();
 
-	delete m_pDecoder;
+	delete decoder_;
 }
 
 /* Delete the surface and texture.  The decoding thread must be stopped, and this
  * is normally done after destroying the decoder. */
 void MovieTexture_Generic::DestroyTexture()
 {
-	delete m_pSurface;
-	m_pSurface = nullptr;
+	delete surface_;
+	surface_ = nullptr;
 
-	delete m_pTextureLock;
-	m_pTextureLock = nullptr;
+	delete texture_lock_;
+	texture_lock_ = nullptr;
 
-	if( m_uTexHandle )
+	if (texture_handle_)
 	{
-		DISPLAY->DeleteTexture( m_uTexHandle );
-		m_uTexHandle = 0;
+		DISPLAY->DeleteTexture(texture_handle_);
+		texture_handle_ = 0;
 	}
 
-	delete m_pRenderTarget;
-	m_pRenderTarget = nullptr;
-	delete m_pTextureIntermediate;
-	m_pTextureIntermediate = nullptr;
+	delete render_target_;
+	render_target_ = nullptr;
+	delete intermediate_texture_;
+	intermediate_texture_ = nullptr;
 }
 
 class RageMovieTexture_Generic_Intermediate : public RageTexture
 {
 public:
-	RageMovieTexture_Generic_Intermediate( RageTextureID ID, int iWidth, int iHeight,
+	RageMovieTexture_Generic_Intermediate(RageTextureID ID, int iWidth, int iHeight,
 		int iImageWidth, int iImageHeight, int iTextureWidth, int iTextureHeight,
-		RageSurfaceFormat SurfaceFormat, RagePixelFormat pixfmt ):
+		RageSurfaceFormat SurfaceFormat, RagePixelFormat pixfmt) :
 		RageTexture(ID),
-		m_SurfaceFormat( SurfaceFormat )
+		m_SurfaceFormat(SurfaceFormat)
 	{
 		m_PixFmt = pixfmt;
 		m_iSourceWidth = iWidth;
@@ -128,71 +128,71 @@ public:
 
 		CreateFrameRects();
 
-		m_uTexHandle = 0;
+		texture_handle_ = 0;
 		CreateTexture();
 	}
 	virtual ~RageMovieTexture_Generic_Intermediate()
 	{
-		if( m_uTexHandle )
+		if (texture_handle_)
 		{
-			DISPLAY->DeleteTexture( m_uTexHandle );
-			m_uTexHandle = 0;
+			DISPLAY->DeleteTexture(texture_handle_);
+			texture_handle_ = 0;
 		}
 	}
 
-	virtual void Invalidate() { m_uTexHandle = 0; }
+	virtual void Invalidate() { texture_handle_ = 0; }
 	virtual void Reload() { }
 	virtual uintptr_t GetTexHandle() const
 	{
-		return m_uTexHandle;
+		return texture_handle_;
 	}
 
 	bool IsAMovie() const { return true; }
 private:
 	void CreateTexture()
 	{
-		if( m_uTexHandle )
+		if (texture_handle_)
 			return;
 
-		RageSurface *pSurface = CreateSurfaceFrom( m_iImageWidth, m_iImageHeight,
+		RageSurface* pSurface = CreateSurfaceFrom(m_iImageWidth, m_iImageHeight,
 			m_SurfaceFormat.BitsPerPixel,
 			m_SurfaceFormat.Mask[0],
 			m_SurfaceFormat.Mask[1],
 			m_SurfaceFormat.Mask[2],
-			m_SurfaceFormat.Mask[3], nullptr, 1 );
+			m_SurfaceFormat.Mask[3], nullptr, 1);
 
-		m_uTexHandle = DISPLAY->CreateTexture( m_PixFmt, pSurface, false );
+		texture_handle_ = DISPLAY->CreateTexture(m_PixFmt, pSurface, false);
 		delete pSurface;
 	}
 
-	uintptr_t m_uTexHandle;
+	uintptr_t texture_handle_;
 	RageSurfaceFormat m_SurfaceFormat;
 	RagePixelFormat m_PixFmt;
 };
 
 void MovieTexture_Generic::Invalidate()
 {
-	m_uTexHandle = 0;
-	if( m_pTextureIntermediate != nullptr )
-		m_pTextureIntermediate->Invalidate();
+	texture_handle_ = 0;
+	if (intermediate_texture_ != nullptr)
+		intermediate_texture_->Invalidate();
 }
 
 void MovieTexture_Generic::CreateTexture()
 {
-	if( m_uTexHandle || m_pRenderTarget != nullptr )
+	if (texture_handle_ || render_target_ != nullptr)
 		return;
 
 	CHECKPOINT;
 
-	m_iSourceWidth  = m_pDecoder->GetWidth();
-	m_iSourceHeight = m_pDecoder->GetHeight();
+	m_iSourceWidth = decoder_->GetWidth();
+	m_iSourceHeight = decoder_->GetHeight();
 
 	/* Adjust m_iSourceWidth to support different source aspect ratios. */
-	float fSourceAspectRatio = m_pDecoder->GetSourceAspectRatio();
-	if( fSourceAspectRatio < 1 )
-		m_iSourceHeight = std::lrint( m_iSourceHeight / fSourceAspectRatio );
-	else if( fSourceAspectRatio > 1 )
-		m_iSourceWidth = std::lrint( m_iSourceWidth * fSourceAspectRatio );
+	float fSourceAspectRatio = decoder_->GetSourceAspectRatio();
+	if (fSourceAspectRatio < 1)
+		m_iSourceHeight = std::lrint(m_iSourceHeight / fSourceAspectRatio);
+	else if (fSourceAspectRatio > 1)
+		m_iSourceWidth = std::lrint(m_iSourceWidth * fSourceAspectRatio);
 
 	/* HACK: Don't cap movie textures to the max texture size, since we
 	 * render them onto the texture at the source dimensions.  If we find a
@@ -201,42 +201,42 @@ void MovieTexture_Generic::CreateTexture()
 	m_iImageHeight = m_iSourceHeight;
 
 	/* Texture dimensions need to be a power of two; jump to the next. */
-	m_iTextureWidth = power_of_two( m_iImageWidth );
-	m_iTextureHeight = power_of_two( m_iImageHeight );
+	m_iTextureWidth = power_of_two(m_iImageWidth);
+	m_iTextureHeight = power_of_two(m_iImageHeight);
 	MovieDecoderPixelFormatYCbCr fmt = PixelFormatYCbCr_Invalid;
-	if( m_pSurface == nullptr )
+	if (surface_ == nullptr)
 	{
-		ASSERT( m_pTextureLock == nullptr );
-		if( g_bMovieTextureDirectUpdates )
-			m_pTextureLock = DISPLAY->CreateTextureLock();
+		ASSERT(texture_lock_ == nullptr);
+		if (g_bMovieTextureDirectUpdates)
+			texture_lock_ = DISPLAY->CreateTextureLock();
 
-		m_pSurface = m_pDecoder->CreateCompatibleSurface( m_iImageWidth, m_iImageHeight,
-			TEXTUREMAN->GetPrefs().m_iMovieColorDepth == 32, fmt );
-		if( m_pTextureLock != nullptr )
+		surface_ = decoder_->CreateCompatibleSurface(m_iImageWidth, m_iImageHeight,
+			TEXTUREMAN->GetPrefs().m_iMovieColorDepth == 32, fmt);
+		if (texture_lock_ != nullptr)
 		{
-			delete [] m_pSurface->pixels;
-			m_pSurface->pixels = nullptr;
+			delete[] surface_->pixels;
+			surface_->pixels = nullptr;
 		}
 
 	}
 
-	RagePixelFormat pixfmt = DISPLAY->FindPixelFormat( m_pSurface->format->BitsPerPixel,
-			m_pSurface->format->Mask[0],
-			m_pSurface->format->Mask[1],
-			m_pSurface->format->Mask[2],
-			m_pSurface->format->Mask[3] );
+	RagePixelFormat pixfmt = DISPLAY->FindPixelFormat(surface_->format->BitsPerPixel,
+		surface_->format->Mask[0],
+		surface_->format->Mask[1],
+		surface_->format->Mask[2],
+		surface_->format->Mask[3]);
 
-	if( pixfmt == RagePixelFormat_Invalid )
+	if (pixfmt == RagePixelFormat_Invalid)
 	{
 		/* We weren't given a natively-supported pixel format.  Pick a supported
 		 * one.  This is a fallback case, and implies a second conversion. */
 		int depth = TEXTUREMAN->GetPrefs().m_iMovieColorDepth;
-		switch( depth )
+		switch (depth)
 		{
 		default:
 			FAIL_M(ssprintf("Unsupported movie color depth: %i", depth));
 		case 16:
-			if( DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB5) )
+			if (DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB5))
 				pixfmt = RagePixelFormat_RGB5;
 			else
 				pixfmt = RagePixelFormat_RGBA4;
@@ -244,11 +244,11 @@ void MovieTexture_Generic::CreateTexture()
 			break;
 
 		case 32:
-			if( DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB8) )
+			if (DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB8))
 				pixfmt = RagePixelFormat_RGB8;
-			else if( DISPLAY->SupportsTextureFormat(RagePixelFormat_RGBA8) )
+			else if (DISPLAY->SupportsTextureFormat(RagePixelFormat_RGBA8))
 				pixfmt = RagePixelFormat_RGBA8;
-			else if( DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB5) )
+			else if (DISPLAY->SupportsTextureFormat(RagePixelFormat_RGB5))
 				pixfmt = RagePixelFormat_RGB5;
 			else
 				pixfmt = RagePixelFormat_RGBA4;
@@ -256,45 +256,45 @@ void MovieTexture_Generic::CreateTexture()
 		}
 	}
 
-	if( fmt != PixelFormatYCbCr_Invalid )
+	if (fmt != PixelFormatYCbCr_Invalid)
 	{
-		RageUtil::SafeDelete( m_pTextureIntermediate );
-		m_pSprite->UnloadTexture();
+		RageUtil::SafeDelete(intermediate_texture_);
+		sprite_->UnloadTexture();
 
 		/* Create the render target.  This will receive the final, converted texture. */
 		RenderTargetParam param;
 		param.iWidth = m_iImageWidth;
 		param.iHeight = m_iImageHeight;
 
-		RageTextureID TargetID( GetID() );
+		RageTextureID TargetID(GetID());
 		TargetID.filename += " target";
-		m_pRenderTarget = new RageTextureRenderTarget( TargetID, param );
+		render_target_ = new RageTextureRenderTarget(TargetID, param);
 
 		/* Create the intermediate texture.  This receives the YUV image. */
-		RageTextureID IntermedID( GetID() );
+		RageTextureID IntermedID(GetID());
 		IntermedID.filename += " intermediate";
 
-		m_pTextureIntermediate = new RageMovieTexture_Generic_Intermediate( IntermedID,
-			m_pDecoder->GetWidth(), m_pDecoder->GetHeight(),
-			m_pSurface->w, m_pSurface->h,
-			power_of_two(m_pSurface->w), power_of_two(m_pSurface->h),
-			*m_pSurface->format, pixfmt );
+		intermediate_texture_ = new RageMovieTexture_Generic_Intermediate(IntermedID,
+			decoder_->GetWidth(), decoder_->GetHeight(),
+			surface_->w, surface_->h,
+			power_of_two(surface_->w), power_of_two(surface_->h),
+			*surface_->format, pixfmt);
 
 		/* Configure the sprite.  This blits the intermediate onto the ifnal render target. */
-		m_pSprite->SetHorizAlign( align_left );
-		m_pSprite->SetVertAlign( align_top );
+		sprite_->SetHorizAlign(align_left);
+		sprite_->SetVertAlign(align_top);
 
 		/* Hack: Sprite wants to take ownership of the texture, and will decrement the refcount
 		 * when it unloads the texture.  Normally we'd make a "copy", but we can't access
 		 * RageTextureManager from here.  Just increment the refcount. */
-		++m_pTextureIntermediate->m_iRefCount;
-		m_pSprite->SetTexture( m_pTextureIntermediate );
-		m_pSprite->SetEffectMode( GetEffectMode(fmt) );
+		++intermediate_texture_->m_iRefCount;
+		sprite_->SetTexture(intermediate_texture_);
+		sprite_->SetEffectMode(GetEffectMode(fmt));
 
 		return;
 	}
 
-	m_uTexHandle = DISPLAY->CreateTexture( pixfmt, m_pSurface, false );
+	texture_handle_ = DISPLAY->CreateTexture(pixfmt, surface_, false);
 }
 
 /*
@@ -304,25 +304,25 @@ void MovieTexture_Generic::CreateTexture()
  */
 float MovieTexture_Generic::CheckFrameTime()
 {
-	if (m_fRate == 0) {
+	if (rate_ == 0) {
 		return 1;	// "a long time until the next frame"
 	}
-	return (m_pDecoder->GetTimestamp() - m_fClock) / m_fRate;
+	return (decoder_->GetTimestamp() - clock_) / rate_;
 }
 
-void MovieTexture_Generic::UpdateMovie(float fSeconds)
+void MovieTexture_Generic::UpdateMovie(float seconds)
 {
 	// Quick exit in case we failed to decode the movie.
-	if (m_failure) {
+	if (failure_) {
 		return;
 	}
-	m_fClock += fSeconds * m_fRate;
+	clock_ += seconds * rate_;
 
 	// If the frame isn't ready, don't update. This does mean the video
 	// will "speed up" to catch up when decoding does outpace display.
 	//
 	// In practice, display should rarely, if ever, outpace decoding.
-	if (m_pDecoder->IsCurrentFrameReady() && CheckFrameTime() <= 0) {
+	if (decoder_->IsCurrentFrameReady() && CheckFrameTime() <= 0) {
 		UpdateFrame();
 		return;
 	}
@@ -337,18 +337,18 @@ void MovieTexture_Generic::UpdateFrame()
 	/* Just in case we were invalidated: */
 	CreateTexture();
 
-	if(m_pTextureLock != nullptr)
+	if (texture_lock_ != nullptr)
 	{
-		uintptr_t iHandle = m_pTextureIntermediate != nullptr ? m_pTextureIntermediate->GetTexHandle(): this->GetTexHandle();
-		m_pTextureLock->Lock(iHandle, m_pSurface);
+		uintptr_t iHandle = intermediate_texture_ != nullptr ? intermediate_texture_->GetTexHandle() : this->GetTexHandle();
+		texture_lock_->Lock(iHandle, surface_);
 	}
 
-	int frame_ret = m_pDecoder->GetFrame(m_pSurface);
+	int frame_ret = decoder_->GetFrame(surface_);
 
 	// Are we looping?
-	if (m_pDecoder->EndOfMovie() && m_bLoop) {
+	if (decoder_->EndOfMovie() && loop_) {
 		LOG->Trace("File \"%s\" looping", GetID().filename.c_str());
-		m_pDecoder->Rollover();
+		decoder_->Rollover();
 
 		// There's a gap in the audio when the music preview loops. This value
 		// is dynamic based on the ending and starting beats (see
@@ -358,9 +358,9 @@ void MovieTexture_Generic::UpdateFrame()
 		// the movie texture doesn't have access to the SoundManager's offset.
 		// Until it does, we can either freeze at the end of the video banner,
 		// or give it a best effort approximation (0.5 seconds).
-		m_fClock = 0.5;
+		clock_ = 0.5;
 	}
-	else if (m_pDecoder->EndOfMovie()) {
+	else if (decoder_->EndOfMovie()) {
 		// At the end of the movie, and not looping.
 		finished_ = true;
 	}
@@ -368,37 +368,37 @@ void MovieTexture_Generic::UpdateFrame()
 	// There's an issue with the frame, make sure it does not get
 	// uploaded.
 	if (frame_ret == -1) {
-		if (m_pTextureLock != nullptr) {
-			m_pTextureLock->Unlock(m_pSurface, true);
+		if (texture_lock_ != nullptr) {
+			texture_lock_->Unlock(surface_, true);
 		}
 		return;
 	}
 
-	if (m_pTextureLock != nullptr) {
-		m_pTextureLock->Unlock(m_pSurface, true);
+	if (texture_lock_ != nullptr) {
+		texture_lock_->Unlock(surface_, true);
 	}
 
-	if (m_pRenderTarget != nullptr)
+	if (render_target_ != nullptr)
 	{
 		CHECKPOINT_M("About to upload the texture.");
 
-		/* If we have no m_pTextureLock, we still have to upload the texture. */
-		if (m_pTextureLock == nullptr) {
+		/* If we have no texture_lock_, we still have to upload the texture. */
+		if (texture_lock_ == nullptr) {
 			DISPLAY->UpdateTexture(
-				m_pTextureIntermediate->GetTexHandle(),
-				m_pSurface,
+				intermediate_texture_->GetTexHandle(),
+				surface_,
 				0, 0,
-				m_pSurface->w, m_pSurface->h);
+				surface_->w, surface_->h);
 		}
-		m_pRenderTarget->BeginRenderingTo(false);
-		m_pSprite->Draw();
-		m_pRenderTarget->FinishRenderingTo();
+		render_target_->BeginRenderingTo(false);
+		sprite_->Draw();
+		render_target_->FinishRenderingTo();
 	}
 	else {
-		if (m_pTextureLock == nullptr) {
+		if (texture_lock_ == nullptr) {
 			DISPLAY->UpdateTexture(
-				m_uTexHandle,
-				m_pSurface,
+				texture_handle_,
+				surface_,
 				0, 0,
 				m_iImageWidth, m_iImageHeight);
 		}
@@ -409,11 +409,11 @@ static EffectMode EffectModes[] =
 {
 	EffectMode_YUYV422,
 };
-static_assert( ARRAYLEN(EffectModes) == NUM_PixelFormatYCbCr );
+static_assert(ARRAYLEN(EffectModes) == NUM_PixelFormatYCbCr);
 
-EffectMode MovieTexture_Generic::GetEffectMode( MovieDecoderPixelFormatYCbCr fmt )
+EffectMode MovieTexture_Generic::GetEffectMode(MovieDecoderPixelFormatYCbCr fmt)
 {
-	ASSERT( fmt != PixelFormatYCbCr_Invalid );
+	ASSERT(fmt != PixelFormatYCbCr_Invalid);
 	return EffectModes[fmt];
 }
 
@@ -421,28 +421,28 @@ void MovieTexture_Generic::Reload()
 {
 }
 
-void MovieTexture_Generic::SetPosition(float fSeconds)
+void MovieTexture_Generic::SetPosition(float seconds)
 {
 	// TODO: The only non-zero use case of this function would be practice mode.
 	// Implement this by mathing out fSeconds and frame counts to seek the
 	// video.
-	if (fSeconds != 0)
+	if (seconds != 0)
 	{
-		LOG->Warn("MovieTexture_Generic::SetPosition(%f): non-0 seeking unsupported; ignored", fSeconds);
+		LOG->Warn("MovieTexture_Generic::SetPosition(%f): non-0 seeking unsupported; ignored", seconds);
 		return;
 	}
 
-	LOG->Trace("Seek to %f", fSeconds);
-	m_fClock = 0;
-	m_pDecoder->Rewind();
+	LOG->Trace("Seek to %f", seconds);
+	clock_ = 0;
+	decoder_->Rewind();
 }
 
 uintptr_t MovieTexture_Generic::GetTexHandle() const
 {
-	if( m_pRenderTarget != nullptr )
-		return m_pRenderTarget->GetTexHandle();
+	if (render_target_ != nullptr)
+		return render_target_->GetTexHandle();
 
-	return m_uTexHandle;
+	return texture_handle_;
 }
 
 /*
