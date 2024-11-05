@@ -13,6 +13,7 @@
 #include "LightsManager.h" // for NUM_CabinetLight
 #include "ActorUtil.h"
 #include "Preference.h"
+#include "GameLoop.h"
 
 #include <cmath>
 #include <cstddef>
@@ -166,9 +167,10 @@ Actor::Actor()
 	m_size = RageVector2( 1, 1 );
 	InitState();
 	m_pParent = nullptr;
-	m_FakeParent= nullptr;
+	m_FakeParent = nullptr;
 	m_bFirstUpdate = true;
-	m_tween_uses_effect_delta= false;
+	m_tween_uses_effect_delta = false;
+	tab_tilde_scaling_enabled_ = true;
 }
 
 Actor::~Actor()
@@ -872,6 +874,14 @@ bool Actor::IsFirstUpdate() const
 void Actor::Update( float fDeltaTime )
 {
 //	LOG->Trace( "Actor::Update( %f )", fDeltaTime );
+
+	float rate = GameLoop::GetUpdateRate();
+	if (rate != 1 && !tab_tilde_scaling_enabled_) {
+		if (rate != 0) {
+			fDeltaTime *= (1 / rate);
+		}
+	}
+
 	ASSERT_M( fDeltaTime >= 0, ssprintf("DeltaTime: %f",fDeltaTime) );
 
 	if( m_fHibernateSecondsLeft > 0 )
