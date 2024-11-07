@@ -60,6 +60,7 @@
 #include "XmlFileUtil.h"
 #include "Profile.h" // for replay data stuff
 #include "RageDisplay.h"
+#include "GameplayHelpers.h"
 
 #include <cmath>
 #include <cstddef>
@@ -519,48 +520,7 @@ void ScreenGameplay::Init()
 		this->AddChild( &m_Toasty );
 	}
 
-	// Use the margin function to calculate where the notefields should be and
-	// what size to zoom them to.  This way, themes get margins to put cut-ins
-	// in, and the engine can have players on different styles without the
-	// notefields overlapping. -Kyz
-	LuaReference margarine;
-	float margins[NUM_PLAYERS][2];
-	FOREACH_PlayerNumber(pn)
-	{
-		margins[pn][0]= 40;
-		margins[pn][1]= 40;
-	}
-	THEME->GetMetric(m_sName, "MarginFunction", margarine);
-	if(margarine.GetLuaType() != LUA_TFUNCTION)
-	{
-		LuaHelpers::ReportScriptErrorFmt("MarginFunction metric for %s must be a function.", m_sName.c_str());
-	}
-	else
-	{
-		Lua* L= LUA->Get();
-		margarine.PushSelf(L);
-		lua_createtable(L, 0, 0);
-		int next_player_slot= 1;
-		FOREACH_EnabledPlayer(pn)
-		{
-			Enum::Push(L, pn);
-			lua_rawseti(L, -2, next_player_slot);
-			++next_player_slot;
-		}
-		Enum::Push(L, GAMESTATE->GetCurrentStyle(PLAYER_INVALID)->m_StyleType);
-		RString err= "Error running MarginFunction:  ";
-		if(LuaHelpers::RunScriptOnStack(L, err, 2, 3, true))
-		{
-			RString marge= "Margin value must be a number.";
-			margins[PLAYER_1][0]= SafeFArg(L, -3, marge, 40);
-			float center= SafeFArg(L, -2, marge, 80);
-			margins[PLAYER_1][1]= center / 2.0f;
-			margins[PLAYER_2][0]= center / 2.0f;
-			margins[PLAYER_2][1]= SafeFArg(L, -1, marge, 40);
-		}
-		lua_settop(L, 0);
-		LUA->Release(L);
-	}
+	std::vector<NotefieldMargins> margins = GetNotefieldMargins();
 
 	float left_edge[NUM_PLAYERS]= {0.0f, SCREEN_WIDTH / 2.0f};
 	FOREACH_EnabledPlayerInfo( m_vPlayerInfo, pi )
@@ -579,8 +539,8 @@ void ScreenGameplay::Init()
 		{ \
 			edge= 0.0f; \
 			screen_space= SCREEN_WIDTH; \
-			left_marge= margins[PLAYER_1][0]; \
-			right_marge= margins[PLAYER_2][1]; \
+			left_marge= margins[PLAYER_1].left; \
+			right_marge= margins[PLAYER_2].right; \
 			field_space= screen_space - left_marge - right_marge; \
 		}
 		// If pi->m_pn is set, then the player will be visible.  If not, then it's not
@@ -590,8 +550,8 @@ void ScreenGameplay::Init()
 		else
 		{
 			screen_space= SCREEN_WIDTH / 2.0f;
-			left_marge= margins[pi->m_pn][0];
-			right_marge= margins[pi->m_pn][1];
+			left_marge= margins[pi->m_pn].left;
+			right_marge= margins[pi->m_pn].right;
 			field_space= screen_space - left_marge - right_marge;
 			if(Center1Player() ||
 				style->m_StyleType == StyleType_TwoPlayersSharedSides ||
