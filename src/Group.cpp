@@ -43,7 +43,7 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
     RString Series = "";
     RString bannerPath = "";
     RString authorsNotes = "";
-    float fOffset = 0;
+    float fOffset = PREFSMAN->m_fDefaultGroupOffsetSeconds;
 
     if (FILEMAN->DoesFileExist(sGroupIniPath)) {
         IniFile ini;
@@ -65,12 +65,14 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
         RString sValue = "";
         
         ini.GetValue("Group", "SyncOffset", sValue);
-        if (sValue.CompareNoCase("null") == 0) {
-            fOffset = 0;
-        } else if (sValue.CompareNoCase("itg") == 0) {
-           fOffset = 0.009f;
-        } else {
-            fOffset = StringToFloat(sValue);
+        if (!sValue.empty()) {
+            if (sValue.CompareNoCase("null") == 0) {
+                fOffset = 0.0f;
+            } else if (sValue.CompareNoCase("itg") == 0) {
+            fOffset = 0.009f;
+            } else {
+                fOffset = StringToFloat(sValue);
+            }
         }
         ini.GetValue("Group", "Year", m_iYearReleased);
         ini.GetValue( "Group", "Credits", credits );
