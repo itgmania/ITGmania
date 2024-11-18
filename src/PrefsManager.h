@@ -154,6 +154,7 @@ protected:
 		RString	m_sAnnouncer;
 		RString m_sTheme;
 		RString	m_sDefaultModifiers;
+		unsigned int m_AudioBufferSize;
 	};
 	std::map<RString, GamePrefs> m_mapGameNameToGamePrefs;
 
@@ -332,6 +333,9 @@ public:
 	Preference<float> m_custom_songs_load_timeout;
 	Preference<float> m_custom_songs_max_seconds;
 	Preference<float> m_custom_songs_max_megabytes;
+
+	// RageSoundMixBuffer buffer size
+	Preference<unsigned int> m_AudioBufferSize;
 
 	// Debug:
 	Preference<bool>	m_bLogToDisk;

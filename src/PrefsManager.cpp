@@ -17,6 +17,13 @@
 
 PrefsManager*	PREFSMAN = nullptr;	// global and accessible from anywhere in our program
 
+/* DEFAULT_AUDIO_BUFFER_SIZE is measured in bytes. It is used
+ * by RageSoundMixBuffer, which handles real-time audio
+ * mixing). The default buffer size of 70560 equals 0.4 seconds
+ * of 44.1KHz audio. A smaller size means lower latency, but
+ * requires more processing power (as a wide generalization). */
+constexpr unsigned DEFAULT_AUDIO_BUFFER_SIZE = 70560;
+
 static const char *MusicWheelUsesSectionsNames[] = {
 	"Never",
 	"Always",
@@ -305,6 +312,7 @@ PrefsManager::PrefsManager() :
 	m_custom_songs_load_timeout("CustomSongsLoadTimeout", 5.f),
 	m_custom_songs_max_seconds("CustomSongsMaxSeconds", 120.f),
 	m_custom_songs_max_megabytes("CustomSongsMaxMegabytes", 5.f),
+	m_AudioBufferSize("AudioBufferSize", DEFAULT_AUDIO_BUFFER_SIZE),
 
 	/* Debug: */
 	m_bLogToDisk			( "LogToDisk",		true ),
@@ -373,6 +381,7 @@ void PrefsManager::StoreGamePrefs()
 	gp.m_sAnnouncer = m_sAnnouncer;
 	gp.m_sTheme = m_sTheme;
 	gp.m_sDefaultModifiers = m_sDefaultModifiers;
+	gp.m_AudioBufferSize = m_AudioBufferSize.Get();
 }
 
 void PrefsManager::RestoreGamePrefs()
@@ -383,7 +392,9 @@ void PrefsManager::RestoreGamePrefs()
 	GamePrefs gp;
 	std::map<RString, GamePrefs>::const_iterator iter = m_mapGameNameToGamePrefs.find( m_sCurrentGame );
 	if( iter != m_mapGameNameToGamePrefs.end() )
+	{
 		gp = iter->second;
+	}
 
 	m_sAnnouncer		.Set( gp.m_sAnnouncer );
 	m_sTheme		.Set( gp.m_sTheme );
@@ -393,7 +404,10 @@ void PrefsManager::RestoreGamePrefs()
 	ReadPrefsFromFile( SpecialFiles::STATIC_INI_PATH, GetPreferencesSection(), true );
 }
 
-PrefsManager::GamePrefs::GamePrefs() : m_sAnnouncer(""), m_sTheme(SpecialFiles::BASE_THEME_NAME), m_sDefaultModifiers("") {}
+PrefsManager::GamePrefs::GamePrefs()
+	: m_sAnnouncer(""), m_sTheme(SpecialFiles::BASE_THEME_NAME), m_sDefaultModifiers(""), m_AudioBufferSize(DEFAULT_AUDIO_BUFFER_SIZE)
+{
+}
 
 void PrefsManager::ReadPrefsFromDisk()
 {
@@ -407,8 +421,11 @@ void PrefsManager::ReadPrefsFromDisk()
 	TranslateDeprecatedFlags();
 
 	if( !m_sCurrentGame.Get().empty() )
+	{
 		RestoreGamePrefs();
+	}
 }
+
 
 void PrefsManager::ResetToFactoryDefaults()
 {
@@ -465,7 +482,10 @@ void PrefsManager::ReadGamePrefsFromIni( const RString &sIni )
 {
 	IniFile ini;
 	if( !ini.ReadFile(sIni) )
+	{
+		LOG->Warn("Failed to read game preferences from file: %s", sIni.c_str());
 		return;
+	}
 
 	FOREACH_CONST_Child( &ini, section )
 	{
@@ -476,10 +496,22 @@ void PrefsManager::ReadGamePrefsFromIni( const RString &sIni )
 		RString sGame = section_name.Right( section_name.length() - GAME_SECTION_PREFIX.length() );
 		GamePrefs &gp = m_mapGameNameToGamePrefs[ sGame ];
 
-		// todo: read more prefs here? -aj
-		ini.GetValue(section_name, "Announcer",		gp.m_sAnnouncer);
-		ini.GetValue(section_name, "Theme",		gp.m_sTheme);
-		ini.GetValue(section_name, "DefaultModifiers",	gp.m_sDefaultModifiers);
+		ini.GetValue(section_name, "Announcer", gp.m_sAnnouncer);
+		ini.GetValue(section_name, "Theme", gp.m_sTheme);
+		ini.GetValue(section_name, "DefaultModifiers", gp.m_sDefaultModifiers);
+
+		unsigned bufferSize = gp.m_AudioBufferSize;
+		if (ini.GetValue(section_name, "AudioBufferSize", bufferSize))
+		{
+			if (bufferSize == 0)
+			{
+				gp.m_AudioBufferSize = DEFAULT_AUDIO_BUFFER_SIZE;
+			}
+		}
+		else
+		{
+			gp.m_AudioBufferSize = DEFAULT_AUDIO_BUFFER_SIZE;
+		}
 	}
 }
 
@@ -535,9 +567,10 @@ void PrefsManager::SavePrefsToIni( IniFile &ini )
 		RString sSection = "Game-" + RString( iter.first );
 
 		// todo: write more values here? -aj
-		ini.SetValue( sSection, "Announcer",		iter.second.m_sAnnouncer );
-		ini.SetValue( sSection, "Theme",		iter.second.m_sTheme );
-		ini.SetValue( sSection, "DefaultModifiers",	iter.second.m_sDefaultModifiers );
+		ini.SetValue(sSection, "Announcer", iter.second.m_sAnnouncer);
+		ini.SetValue(sSection, "Theme", iter.second.m_sTheme);
+		ini.SetValue(sSection, "DefaultModifiers", iter.second.m_sDefaultModifiers);
+		ini.SetValue(sSection, "AudioBufferSize", iter.second.m_AudioBufferSize);
 	}
 }
 
