@@ -414,7 +414,6 @@ void SongManager::LoadSongDir( RString sDir, LoadingWindow *ld, bool onlyAdditio
 			// Apply Group Offset if applicable
 			if( group->GetSyncOffset() != 0 )
 			{
-				LOG->Trace("Applying group offset of %i ms to \"%s\"", group->GetSyncOffset(), pNewSong->GetSongDir().c_str() );
 				pNewSong->m_SongTiming.m_fBeat0GroupOffsetInSeconds = group->GetSyncOffset();
 				const std::vector<Steps*>& vpSteps = pNewSong->GetAllSteps();
 				for (Steps* s : vpSteps)
