@@ -286,8 +286,7 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 	{
 		return (mode.dmFields & DM_PELSWIDTH) && (mode.dmFields & DM_PELSHEIGHT)
 			&& (mode.dmFields & DM_DISPLAYFREQUENCY)
-			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL)
-			&& (mode.dmFields & DM_POSITION));
+			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL));
 	};
 
 	g_CurrentParams = p;
@@ -305,7 +304,8 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 	pos.y = 0;
 
 	// Look for the preferred display's position.
-	if (EnumDisplaySettingsEx(p.sDisplayId, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode) )
+	if (EnumDisplaySettingsEx(p.sDisplayId, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode)
+		&& (devmode.dmFields & DM_POSITION))
 	{
 		pos = devmode.dmPosition;
 		resetDeviceMode(devmode);
@@ -384,18 +384,20 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 	 * Otherwise the window will be centered on the last display option that was hovered before selecting Windowed in Options*/
 	if( p.windowed && !p.bWindowIsFullscreenBorderless)
 	{
-		if (EnumDisplaySettingsEx(NULL, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode))
+		if (EnumDisplaySettingsEx(NULL, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode)
+			&& (devmode.dmFields & DM_POSITION))
 		{
 			WindowRect.left = devmode.dmPosition.x;
 			WindowRect.top = devmode.dmPosition.y;
 			WindowRect.right = devmode.dmPosition.x + devmode.dmPelsWidth;
 			WindowRect.bottom = devmode.dmPosition.y + devmode.dmPelsHeight;
-			resetDeviceMode(devmode);
 		}
 		
 		x = WindowRect.left + (WindowRect.right - WindowRect.left - iWidth) / 2;
 		y = WindowRect.top + (WindowRect.bottom - WindowRect.top - iHeight) / 2;
 	}
+
+	resetDeviceMode(devmode);
 
 	/* Move and resize the window. SWP_FRAMECHANGED causes the above
 	 * SetWindowLong to take effect. */
@@ -567,8 +569,7 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 	auto deviceModeIsValid = [=]( const DEVMODE& mode ) {
 		return (mode.dmFields & DM_PELSWIDTH) && (mode.dmFields & DM_PELSHEIGHT)
 			&& (mode.dmFields & DM_DISPLAYFREQUENCY)
-			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL)
-			&& (mode.dmFields & DM_POSITION));
+			&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL));
 	};
 
 	DEVMODE devmode;
@@ -609,7 +610,8 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 
 		// Get the current display mode
 		// Set the ENUM_CURRENT_SETTINGS flag so that we only store DisplaySpecs for valid displays
-		if (EnumDisplaySettingsEx(dd.DeviceName, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode))
+		if (EnumDisplaySettingsEx(dd.DeviceName, ENUM_CURRENT_SETTINGS, &devmode, 0) && deviceModeIsValid(devmode)
+			&& (devmode.dmFields & DM_POSITION))
 		{
 			DisplayMode m = { devmode.dmPelsWidth, devmode.dmPelsHeight, static_cast<double> (devmode.dmDisplayFrequency) };
 			RectI bounds = { devmode.dmPosition.x, devmode.dmPosition.y, static_cast<int> (m.width), static_cast<int> (m.height) };
@@ -625,6 +627,7 @@ void GraphicsWindow::GetDisplaySpecs( DisplaySpecs &out )
 		LOG->Warn("Could not retrieve *any* DisplaySpec's!");
 	ZeroMemory(&dd, sizeof(dd));
 	dd.cb = sizeof(dd);
+	resetDeviceMode(devmode);
 }
 
 /*
