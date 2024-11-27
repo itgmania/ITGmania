@@ -87,13 +87,13 @@ static LRESULT CALLBACK GraphicsWindow_WndProc( HWND hWnd, UINT msg, WPARAM wPar
 				 * because that's where most other apps seem to do it. */
 				if( g_bHasFocus && !bHadFocus )
 				{
-					ChangeDisplaySettings( &g_FullScreenDevMode, CDS_FULLSCREEN );
+					ChangeDisplaySettingsEx( g_CurrentParams.sDisplayId, &g_FullScreenDevMode, nullptr, CDS_FULLSCREEN, nullptr );
 					ShowWindow( g_hWndMain, SW_SHOWNORMAL );
 					SetWindowPos( g_hWndMain, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
 				}
 				else if( !g_bHasFocus && bHadFocus )
 				{
-					ChangeDisplaySettings( nullptr, 0 );
+					ChangeDisplaySettingsEx(g_CurrentParams.sDisplayId, nullptr, nullptr, 0, nullptr);
 				}
 			}
 
@@ -228,7 +228,7 @@ RString GraphicsWindow::SetScreenMode( const VideoModeParams &p )
 	if( p.windowed )
 	{
 		// We're going windowed. If we were previously fullscreen, reset.
-		ChangeDisplaySettings( nullptr, 0 );
+		ChangeDisplaySettingsEx( p.sDisplayId, nullptr, nullptr, 0, nullptr );
 
 		return RString();
 	}
@@ -246,13 +246,13 @@ RString GraphicsWindow::SetScreenMode( const VideoModeParams &p )
 		DevMode.dmDisplayFrequency = p.rate;
 		DevMode.dmFields |= DM_DISPLAYFREQUENCY;
 	}
-	ChangeDisplaySettings( nullptr, 0 );
+	ChangeDisplaySettingsEx(p.sDisplayId, nullptr, nullptr, 0, nullptr);
 
-	int ret = ChangeDisplaySettings( &DevMode, CDS_FULLSCREEN );
+	int ret = ChangeDisplaySettingsEx( p.sDisplayId, &DevMode, nullptr, CDS_FULLSCREEN, nullptr );
 	if( ret != DISP_CHANGE_SUCCESSFUL && (DevMode.dmFields & DM_DISPLAYFREQUENCY) )
 	{
 		DevMode.dmFields &= ~DM_DISPLAYFREQUENCY;
-		ret = ChangeDisplaySettings( &DevMode, CDS_FULLSCREEN );
+		ret = ChangeDisplaySettingsEx( p.sDisplayId, &DevMode, nullptr, CDS_FULLSCREEN, nullptr );
 	}
 
 	// XXX: append error
@@ -514,7 +514,7 @@ void GraphicsWindow::Shutdown()
 	 * It'd be nice to not do this: Windows will do it when we quit, and if
 	 * we're shutting down OpenGL to try D3D, this will cause extra mode
 	 * switches. However, we need to do this before displaying dialogs. */
-	ChangeDisplaySettings( nullptr, 0 );
+	ChangeDisplaySettingsEx( g_CurrentParams.sDisplayId, nullptr, nullptr, 0, nullptr );
 
 	AppInstance inst;
 	UnregisterClass( g_sClassName, inst );

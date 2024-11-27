@@ -349,13 +349,45 @@ static DWORD WINAPI MainExceptionHandler( LPVOID lpParameter )
 		/* The thread that crashed was the thread that created the main window.
 		 * Hide the window. This will also restore the video mode, if necessary. */
 		ShowWindow( g_hForegroundWnd, SW_HIDE );
-	} else {
+	}
+	else {
 		/* A different thread crashed. Simply kill all other windows. We can't
 		 * safely call ShowWindow; the main thread might be deadlocked. */
-		RageThread::HaltAllThreads( true );
-		ChangeDisplaySettings( nullptr, 0 );
-	}
+		RageThread::HaltAllThreads(true);
+		auto deviceModeIsValid = [=](const DEVMODE& mode) {
+			return (mode.dmFields & DM_PELSWIDTH) && (mode.dmFields & DM_PELSHEIGHT)
+				&& (mode.dmFields & DM_DISPLAYFREQUENCY)
+				&& (mode.dmBitsPerPel >= 32 || !(mode.dmFields & DM_BITSPERPEL));
+			};
 
+		DEVMODE devmode;
+		ZeroMemory(&devmode, sizeof(DEVMODE));
+		devmode.dmSize = sizeof(DEVMODE);
+		devmode.dmDriverExtra = 0;
+
+		DWORD deviceIter = 0;
+		DISPLAY_DEVICE dd;
+		ZeroMemory(&dd, sizeof(dd));
+		dd.cb = sizeof(dd);
+
+		/* Since we don't know which display was modified for fullscreen exclusive mode,
+		 * loop through all displays it could have been to restore the video mode. */
+		while (EnumDisplayDevices(NULL, deviceIter++, &dd, 0))
+		{
+			while (EnumDisplaySettingsEx(dd.DeviceName, ENUM_CURRENT_SETTINGS, &devmode, 0))
+			{
+				if (deviceModeIsValid(devmode))
+				{
+					ChangeDisplaySettingsEx(dd.DeviceName, nullptr, nullptr, 0, nullptr);
+				}
+				ZeroMemory(&devmode, sizeof(DEVMODE));
+				devmode.dmSize = sizeof(DEVMODE);
+				devmode.dmDriverExtra = 0;
+			}
+		}
+		ZeroMemory(&dd, sizeof(dd));
+		dd.cb = sizeof(dd);
+	}
 	InHere = false;
 
 	SetUnhandledExceptionFilter(nullptr);
