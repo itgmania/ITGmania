@@ -334,6 +334,7 @@ public:
 	Preference<float> m_custom_songs_max_megabytes;
 
 	// Debug:
+	Preference<bool>	m_bDebugMenuEnabled;
 	Preference<bool>	m_bLogToDisk;
 	Preference<bool>	m_bForceLogFlush;
 	Preference<bool>	m_bShowLogOutput;

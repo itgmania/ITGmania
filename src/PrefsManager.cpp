@@ -307,6 +307,7 @@ PrefsManager::PrefsManager() :
 	m_custom_songs_max_megabytes("CustomSongsMaxMegabytes", 5.f),
 
 	/* Debug: */
+	m_bDebugMenuEnabled("DebugMenuEnabled", true, nullptr, PreferenceType::Immutable),
 	m_bLogToDisk			( "LogToDisk",		true ),
 #if defined(DEBUG)
 	m_bForceLogFlush		( "ForceLogFlush",	true ),
