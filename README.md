@@ -3,7 +3,7 @@ ITGmania
 
 ITGmania is a fork of [StepMania 5.1](https://github.com/stepmania/stepmania/tree/5_1-new), an advanced cross-platform rhythm game for home and arcade use.
 
-[![Continuous integration](https://github.com/itgmania/itgmania/workflows/Continuous%20integration/badge.svg?branch=beta)](https://github.com/itgmania/itgmania/actions?query=workflow%3A%22Continuous+integration%22+branch%3Abeta)
+[![Continuous integration](https://github.com/itgmania/itgmania/actions/workflows/ci.yml/badge.svg?branch=beta)](https://github.com/itgmania/itgmania/actions/workflows/ci.yml)
 
 ## Changes to StepMania 5.1
 
