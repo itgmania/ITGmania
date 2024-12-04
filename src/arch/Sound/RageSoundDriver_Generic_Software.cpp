@@ -301,8 +301,8 @@ void RageSoundDriver::Update()
 //		LOG->Trace("set (#%i) %p from STOPPING to HALTING", i, m_Sounds[i].m_pSound);
 	}
 
-	constexpr uint_fast64_t iUsecs = 1000000;
-	static uint_fast64_t fNextUsecs = 0;
+	constexpr uint64_t iUsecs = 1000000;
+	static uint64_t fNextUsecs = 0;
 	if (RageTimer::GetTimeSinceStartMicroseconds() >= fNextUsecs)
 	{
 		/* Lockless: only Mix() can write to underruns. */

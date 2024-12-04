@@ -24,9 +24,9 @@ public:
 	float PeekDeltaTime() const { return Ago(); }
 
 	static double GetTimeSinceStart();	// seconds since the program was started
-	static float GetTimeSinceStartFast() { return GetTimeSinceStart(); }
-	static int GetTimeSinceStartSeconds();
-	static uint_fast64_t GetTimeSinceStartMicroseconds();
+	static double GetTimeSinceStartFast() { return GetTimeSinceStart(); }
+	static int GetTimeSinceStartSeconds(); 	// This is used where GetTimeSinceStart would be cast to an int without rounding.
+	static uint64_t GetTimeSinceStartMicroseconds();
 
 	/* Get a timer representing half of the time ago as this one. */
 	RageTimer Half() const;

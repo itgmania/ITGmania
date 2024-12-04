@@ -30,16 +30,14 @@
 #include <cmath>
 #include <cstdint>
 
-const uint64_t ONE_SECOND_IN_MICROSECONDS_ULL = 1000000ULL;
-const int64_t ONE_SECOND_IN_MICROSECONDS_LL = 1000000LL;
-const uint_fast64_t ONE_SECOND_IN_MICROSECONDS_FAST_ULL = 1000000ULL;
-const double ONE_SECOND_IN_MICROSECONDS_DBL = 1000000.0;
-
+// Intialize important variables and definitions
+constexpr uint64_t ONE_SECOND_IN_MICROSECONDS_ULL = 1000000ULL;
+constexpr int64_t ONE_SECOND_IN_MICROSECONDS_LL = 1000000LL;
+constexpr double ONE_SECOND_IN_MICROSECONDS_DBL = 1000000.0;
 const RageTimer RageZeroTimer(0,0);
 static const uint64_t g_iStartTime = ArchHooks::GetSystemTimeInMicroseconds();
-static uint_fast64_t g_iStartTimeFast64 = g_iStartTime;
 
-static uint64_t GetTime()
+static inline uint64_t GetTime() noexcept
 {
 	return ArchHooks::GetSystemTimeInMicroseconds();
 }
@@ -54,19 +52,19 @@ static uint64_t GetTime()
  * and do thorough testing if you change anything here. -sukibaby */
 double RageTimer::GetTimeSinceStart()
 {
-	constexpr double USEC_TO_SEC = 1.0 / 1000000.0;
-	return static_cast<double>(RageTimer::GetTimeSinceStartMicroseconds()) * USEC_TO_SEC;
+	const uint64_t usecs = (GetTime() - g_iStartTime);
+	return static_cast<double>(usecs / ONE_SECOND_IN_MICROSECONDS_DBL);
 }
 
 int RageTimer::GetTimeSinceStartSeconds()
 {
-    uint_fast64_t usec = RageTimer::GetTimeSinceStartMicroseconds();
-    return static_cast<int>(usec / ONE_SECOND_IN_MICROSECONDS_FAST_ULL);
+	const uint64_t usecs = (GetTime() - g_iStartTime);
+	return static_cast<int>(usecs / ONE_SECOND_IN_MICROSECONDS_ULL);
 }
 
-uint_fast64_t RageTimer::GetTimeSinceStartMicroseconds()
+uint64_t RageTimer::GetTimeSinceStartMicroseconds()
 {
-	return GetTime() - g_iStartTimeFast64;
+	return (GetTime() - g_iStartTime);
 }
 
 void RageTimer::Touch()

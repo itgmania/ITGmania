@@ -682,12 +682,12 @@ void LockMutex::Unlock()
 
 	mutex.Unlock();
 
-	constexpr uint_fast64_t THRESHOLD_USEC = 15000;
+	constexpr uint64_t THRESHOLD_USEC = 15000;
 
-	if (file && locked_at != FAST_ULL_MAX)
+	if (file && locked_at != UINT64_MAX)
 	{
-		const uint_fast64_t current_usecs = RageTimer::GetTimeSinceStartMicroseconds();
-		const uint_fast64_t dur_usecs = current_usecs - locked_at;
+		const uint64_t current_usecs = RageTimer::GetTimeSinceStartMicroseconds();
+		const uint64_t dur_usecs = current_usecs - locked_at;
 
 		if (dur_usecs > THRESHOLD_USEC)
 			LOG->Trace("Lock at %s:%i took %llu microseconds", file, line, dur_usecs);
