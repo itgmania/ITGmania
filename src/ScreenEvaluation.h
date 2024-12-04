@@ -57,7 +57,6 @@ public:
 
 	virtual bool MenuBack( const InputEventPlus &input );
 	virtual bool MenuStart( const InputEventPlus &input );
-	virtual bool MenuRestart( const InputEventPlus &input );
 	virtual void PushSelf( lua_State *L );
 	StageStats *GetStageStats() { return m_pStageStats; }
 
