@@ -21,7 +21,7 @@ Group::Group() {
     m_sGroupName = "";
     m_sTranslitTitle = "";
     m_sSeries = "";
-    m_iSyncOffset = 0;
+    m_fSyncOffset = 0;
     m_bHasGroupIni = false;
     m_iYearReleased = 0;
     m_sBannerPath = "";
@@ -34,7 +34,7 @@ Group::~Group() {
     m_sCredits.clear();
 }
 
-Group::Group(const RString sDir, const RString &sGroupDirName) {
+Group::Group(const RString& sDir, const RString& sGroupDirName) {
     RString sGroupIniPath = sDir + sGroupDirName + "/Group.ini";
     RString credits = "";
     RString sDisplayTitle = sGroupDirName;
@@ -47,36 +47,40 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
 
     if (FILEMAN->DoesFileExist(sGroupIniPath)) {
         IniFile ini;
-        ini.ReadFile( sGroupIniPath );
-        ini.GetValue( "Group", "DisplayTitle", sDisplayTitle );
+        ini.ReadFile(sGroupIniPath);
+        ini.GetValue("Group", "DisplayTitle", sDisplayTitle);
+        Trim(sDisplayTitle);
         if (sDisplayTitle.empty()) {
             sDisplayTitle = Basename(sGroupDirName);
         }
-        ini.GetValue( "Group", "Banner", bannerPath );
-        ini.GetValue( "Group", "SortTitle", SortTitle );
+        ini.GetValue("Group", "Banner", bannerPath);
+        ini.GetValue("Group", "SortTitle", SortTitle);
+        Trim(SortTitle);
         if (SortTitle.empty()) {
             SortTitle = sDisplayTitle;
         }
-        ini.GetValue( "Group", "TranslitTitle", TranslitTitle );
+        ini.GetValue("Group", "TranslitTitle", TranslitTitle);
+        Trim(TranslitTitle);
         if (TranslitTitle.empty()) {
             TranslitTitle = sDisplayTitle;
         }
-        ini.GetValue( "Group", "Series", Series );
+        ini.GetValue("Group", "Series", Series);
         RString sValue = "";
         
         ini.GetValue("Group", "SyncOffset", sValue);
+        Trim(sValue);
         if (!sValue.empty()) {
             if (sValue.CompareNoCase("null") == 0) {
                 fOffset = 0.0f;
             } else if (sValue.CompareNoCase("itg") == 0) {
-            fOffset = 0.009f;
+                fOffset = 0.009f;
             } else {
                 fOffset = StringToFloat(sValue);
             }
         }
         ini.GetValue("Group", "Year", m_iYearReleased);
-        ini.GetValue( "Group", "Credits", credits );
-        ini.GetValue( "Group", "AuthorsNotes", authorsNotes );
+        ini.GetValue("Group", "Credits", credits);
+        ini.GetValue("Group", "AuthorsNotes", authorsNotes);
     } else {
         m_bHasGroupIni = false;
     }
@@ -85,29 +89,29 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
 	std::vector<RString> arrayGroupBanners;
 	
 	// First check if there is a banner provided in group.ini
-	if( bannerPath != "" )
+	if(!bannerPath.empty())
 	{
-		GetDirListing( sDir+sGroupDirName+"/"+bannerPath, arrayGroupBanners );
+		GetDirListing(sDir + sGroupDirName + "/" + bannerPath, arrayGroupBanners);
 	}
-	GetDirListing( sDir+sGroupDirName+"/*.png", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.jpg", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.jpeg", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.gif", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.bmp", arrayGroupBanners );
+	GetDirListing(sDir + sGroupDirName + "/*.png", arrayGroupBanners);
+	GetDirListing(sDir + sGroupDirName + "/*.jpg", arrayGroupBanners);
+	GetDirListing(sDir + sGroupDirName + "/*.jpeg", arrayGroupBanners);
+	GetDirListing(sDir + sGroupDirName + "/*.gif", arrayGroupBanners);
+	GetDirListing(sDir + sGroupDirName + "/*.bmp", arrayGroupBanners);
 
-	if( !arrayGroupBanners.empty() ) {
-		m_sBannerPath = sDir+sGroupDirName+"/"+arrayGroupBanners[0] ;
+	if(!arrayGroupBanners.empty()) {
+		m_sBannerPath = sDir + sGroupDirName + "/" + arrayGroupBanners[0] ;
     }
 	else
 	{
 		// Look for a group banner in the parent folder
-		GetDirListing( sDir+sGroupDirName+".png", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".jpg", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".jpeg", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".gif", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".bmp", arrayGroupBanners );
-		if( !arrayGroupBanners.empty() )
-			m_sBannerPath = sDir+arrayGroupBanners[0];
+		GetDirListing(sDir + sGroupDirName + ".png", arrayGroupBanners);
+		GetDirListing(sDir + sGroupDirName + ".jpg", arrayGroupBanners);
+		GetDirListing(sDir + sGroupDirName + ".jpeg", arrayGroupBanners);
+		GetDirListing(sDir + sGroupDirName + ".gif", arrayGroupBanners);
+		GetDirListing(sDir + sGroupDirName + ".bmp", arrayGroupBanners);
+		if(!arrayGroupBanners.empty())
+			m_sBannerPath = sDir + arrayGroupBanners[0];
 	}
 
         /* Other group graphics are a bit trickier, and usually don't exist.
@@ -118,25 +122,25 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
         // Group background
 
         //vector<RString> arrayGroupBackgrounds;
-        //GetDirListing( sDir+sGroupDirName+"/*-bg.png", arrayGroupBanners );
-        //GetDirListing( sDir+sGroupDirName+"/*-bg.jpg", arrayGroupBanners );
-        //GetDirListing( sDir+sGroupDirName+"/*-bg.jpeg", arrayGroupBanners );
-        //GetDirListing( sDir+sGroupDirName+"/*-bg.gif", arrayGroupBanners );
-        //GetDirListing( sDir+sGroupDirName+"/*-bg.bmp", arrayGroupBanners );
+        //GetDirListing(sDir + sGroupDirName + "/*-bg.png", arrayGroupBanners);
+        //GetDirListing(sDir + sGroupDirName + "/*-bg.jpg", arrayGroupBanners);
+        //GetDirListing(sDir + sGroupDirName + "/*-bg.jpeg", arrayGroupBanners);
+        //GetDirListing(sDir + sGroupDirName + "/*-bg.gif", arrayGroupBanners);
+        //GetDirListing(sDir + sGroupDirName + "/*-bg.bmp", arrayGroupBanners);
     /*
         RString sBackgroundPath;
-        if( !arrayGroupBackgrounds.empty() )
-            sBackgroundPath = sDir+sGroupDirName+"/"+arrayGroupBackgrounds[0];
+        if(!arrayGroupBackgrounds.empty())
+            sBackgroundPath = sDir + sGroupDirName + "/" + arrayGroupBackgrounds[0];
         else
         {
             // Look for a group background in the parent folder
-            GetDirListing( sDir+sGroupDirName+"-bg.png", arrayGroupBackgrounds );
-            GetDirListing( sDir+sGroupDirName+"-bg.jpg", arrayGroupBackgrounds );
-            GetDirListing( sDir+sGroupDirName+"-bg.jpeg", arrayGroupBackgrounds );
-            GetDirListing( sDir+sGroupDirName+"-bg.gif", arrayGroupBackgrounds );
-            GetDirListing( sDir+sGroupDirName+"-bg.bmp", arrayGroupBackgrounds );
-            if( !arrayGroupBackgrounds.empty() )
-                sBackgroundPath = sDir+arrayGroupBackgrounds[0];
+            GetDirListing(sDir + sGroupDirName + "-bg.png", arrayGroupBackgrounds);
+            GetDirListing(sDir + sGroupDirName + "-bg.jpg", arrayGroupBackgrounds);
+            GetDirListing(sDir + sGroupDirName + "-bg.jpeg", arrayGroupBackgrounds);
+            GetDirListing(sDir + sGroupDirName + "-bg.gif", arrayGroupBackgrounds);
+            GetDirListing(sDir + sGroupDirName + "-bg.bmp", arrayGroupBackgrounds);
+            if(!arrayGroupBackgrounds.empty())
+                sBackgroundPath = sDir + arrayGroupBackgrounds[0];
         }
     */
 
@@ -150,7 +154,7 @@ Group::Group(const RString sDir, const RString &sGroupDirName) {
     split(credits, ";", credits_vector);
     m_sCredits = credits_vector;
     m_sAuthorsNotes = authorsNotes;    
-    m_iSyncOffset = fOffset;
+    m_fSyncOffset = fOffset;
     
 }
 
@@ -166,74 +170,74 @@ const std::vector<Song *> &Group::GetSongs() const
 class LunaGroup: public Luna<Group>
 {
 public:
-	static int GetGroupName( T* p, lua_State *L )
+	static int GetGroupName(T* p, lua_State *L)
 	{
 		lua_pushstring(L, p->GetGroupName());
 		return 1;
 	}
-	static int GetSortTitle( T* p, lua_State *L )
+	static int GetSortTitle(T* p, lua_State *L)
 	{
 		lua_pushstring(L, p->GetSortTitle());
         return 1;
     }
 
-    static int GetDisplayTitle( T* p, lua_State *L )
+    static int GetDisplayTitle(T* p, lua_State *L)
     {
         lua_pushstring(L, p->GetDisplayTitle());
         return 1;
     }
 
-    static int GetTranslitTitle( T* p, lua_State *L )
+    static int GetTranslitTitle(T* p, lua_State *L)
     {
         lua_pushstring(L, p->GetTranslitTitle());
         return 1;
     }
 
-    static int GetSeries( T* p, lua_State *L )
+    static int GetSeries(T* p, lua_State *L)
     {
         lua_pushstring(L, p->GetSeries());
         return 1;
     }
 
-    static int GetSyncOffset( T* p, lua_State *L )
+    static int GetSyncOffset(T* p, lua_State *L)
     {
         lua_pushnumber(L, p->GetSyncOffset());
         return 1;
     }
 
-    static int HasGroupIni( T* p, lua_State *L )
+    static int HasGroupIni(T* p, lua_State *L)
     {
         lua_pushboolean(L, p->HasGroupIni());
         return 1;
     }
 
-    static int GetSongs( T* p, lua_State *L )
+    static int GetSongs(T* p, lua_State *L)
     {
         const std::vector<Song*> &v = p->GetSongs();
-        LuaHelpers::CreateTableFromArray<Song*>( v, L );
+        LuaHelpers::CreateTableFromArray<Song*>(v, L);
         return 1;
     }
 
-    static int GetBannerPath( T* p, lua_State *L )
+    static int GetBannerPath(T* p, lua_State *L)
     {
         lua_pushstring(L, p->GetBannerPath());
         return 1;
     }
 
-    static int GetStepArtistCredits( T* p, lua_State *L )
+    static int GetStepArtistCredits(T* p, lua_State *L)
     {
         std::vector<RString> v = p->GetStepArtistCredits();
-        LuaHelpers::CreateTableFromArray<RString>( v, L );
+        LuaHelpers::CreateTableFromArray<RString>(v, L);
         return 1;
     }
 
-    static int GetAuthorsNotes( T* p, lua_State *L )
+    static int GetAuthorsNotes(T* p, lua_State *L)
     {
         lua_pushstring(L, p->GetAuthorsNotes());
         return 1;
     }
 
-    static int GetYearReleased( T* p, lua_State *L )
+    static int GetYearReleased(T* p, lua_State *L)
     {
         lua_pushnumber(L, p->GetYearReleased());
         return 1;
@@ -241,23 +245,22 @@ public:
 
 	LunaGroup()
 	{
-		ADD_METHOD( GetGroupName );
-		ADD_METHOD( GetSortTitle );
-		ADD_METHOD( GetDisplayTitle );
-		ADD_METHOD( GetTranslitTitle );
-		ADD_METHOD( GetSeries );
-		ADD_METHOD( GetSyncOffset );
-		ADD_METHOD( HasGroupIni );
-		ADD_METHOD( GetSongs );
-		ADD_METHOD( GetBannerPath );
-		ADD_METHOD( GetStepArtistCredits );
-		ADD_METHOD( GetAuthorsNotes );
-        ADD_METHOD( GetYearReleased );
+		ADD_METHOD(GetGroupName);
+		ADD_METHOD(GetSortTitle);
+		ADD_METHOD(GetDisplayTitle);
+		ADD_METHOD(GetTranslitTitle);
+		ADD_METHOD(GetSeries);
+		ADD_METHOD(GetSyncOffset);
+		ADD_METHOD(HasGroupIni);
+		ADD_METHOD(GetSongs);
+		ADD_METHOD(GetBannerPath);
+		ADD_METHOD(GetStepArtistCredits);
+		ADD_METHOD(GetAuthorsNotes);
+        ADD_METHOD(GetYearReleased);
 	}
 
 };
 
-LUA_REGISTER_CLASS( Group )
-
+LUA_REGISTER_CLASS(Group)
 
 // lua end
