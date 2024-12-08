@@ -157,9 +157,6 @@ Linux
 After installing, run `sudo make install`. The files will be placed in the location specified:
 by default, that is now `/usr/local/itgmania`.
 
-
-
-
 Last Words
 ==
 
