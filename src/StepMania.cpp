@@ -298,10 +298,10 @@ void ShutdownGame()
 		LIGHTSMAN->TurnOffAllLights();
 	}
 
+	RageUtil::SafeDelete( NETWORK );
 	RageUtil::SafeDelete( SCREENMAN );
 	RageUtil::SafeDelete( STATSMAN );
 	RageUtil::SafeDelete( MESSAGEMAN );
-	RageUtil::SafeDelete( NETWORK );
 	/* Delete INPUTMAN before the other INPUTFILTER handlers, or an input
 	 * driver may try to send a message to INPUTFILTER after we delete it. */
 	RageUtil::SafeDelete( INPUTMAN );
