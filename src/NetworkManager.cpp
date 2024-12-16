@@ -100,6 +100,12 @@ NetworkManager::~NetworkManager()
 	// Unregister with Lua.
 	LUA->UnsetGlobal("NETWORK");
 
+	// Close all WebSocket connections
+	for (auto& handle : webSocketHandles) {
+		handle->webSocket.stop();
+	}
+
+	// Set the status to uninitialized.
 	ix::uninitNetSystem();
 }
 
@@ -262,6 +268,8 @@ WebSocketHandlePtr NetworkManager::WebSocket(const WebSocketArgs& args)
 
 	handle->webSocket.start();
 
+	webSocketHandles.push_back(handle);
+
 	return handle;
 }
 
@@ -316,6 +324,10 @@ int HttpRequestFuture::Cancel(lua_State *L)
 	return 0;
 }
 
+WebSocketHandle::~WebSocketHandle() {
+	webSocket.stop();
+}
+
 int WebSocketHandle::Collect(lua_State *L)
 {
 	void *udata = luaL_checkudata(L, 1, "WebSocketHandle");
@@ -328,11 +340,17 @@ int WebSocketHandle::Close(lua_State *L)
 {
 	void *udata = luaL_checkudata(L, 1, "WebSocketHandle");
 	auto handle = *static_cast<WebSocketHandlePtr*>(udata);
+
 	LUA->YieldLua();
 	handle->webSocket.stop();
-	handle->onClose();
 	LUA->UnyieldLua();
-	return 0;
+
+	if (handle->onClose)
+	{
+		handle->onClose();
+	}
+
+	return 1;
 }
 
 int WebSocketHandle::Send(lua_State *L)
