@@ -129,7 +129,6 @@ Confirm the installation. Once everything is installed, you can open **StepMania
 
 ![image](https://github.com/user-attachments/assets/f9235e14-bfc8-4f8f-8b30-9706dfb3bcc6)
 
-
 macOS
 ===
 Using Xcode, simply build in Xcode and it will place the .app file in the correct directory.
