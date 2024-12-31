@@ -504,8 +504,14 @@ void MusicWheel::GetSongList( std::vector<Song*> &arraySongs, SortOrder so )
 			if( pSong->HasStepsTypeAndDifficulty( GAMESTATE->GetCurrentStyle(PLAYER_INVALID)->m_StepsType,GAMESTATE->m_PreferredDifficulty[GAMESTATE->GetFirstHumanPlayer()] ) )
 				arraySongs.push_back( pSong );
 		}
-		else
+		else if( CommonMetrics::AUTO_SET_STYLE || GAMESTATE->GetCurrentStyle(PLAYER_INVALID) == nullptr )
 		{
+			if (SongUtil::IsSongPlayable(pSong))
+				arraySongs.push_back( pSong );
+				
+		} else
+		{
+
 			// If the song has at least one steps, add it.
 			if( pSong->HasStepsType(GAMESTATE->GetCurrentStyle(PLAYER_INVALID)->m_StepsType) )
 				arraySongs.push_back( pSong );
