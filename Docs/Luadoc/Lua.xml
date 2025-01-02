@@ -926,6 +926,7 @@
 			<Function name='GetNumStagesLeft'/>
 			<Function name='GetPlayMode'/>
 			<Function name='GetPlayerDisplayName'/>
+			<Function name='GetPlayerFailType'/>
 			<Function name='GetPlayerState'/>
 			<Function name='GetPreferredDifficulty'/>
 			<Function name='GetPreferredSong'/>

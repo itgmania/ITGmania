@@ -3357,6 +3357,13 @@ public:
 		p->m_autogen_fargs[si]= v;
 		COMMON_RETURN_SELF;
 	}
+
+	static int GetPlayerFailType(T* p, lua_State* L)
+	{
+		Enum::Push(L, p->GetPlayerFailType(Enum::Check<PlayerNumber>(L, 1)));
+		return 1;
+	}
+
 	static int prepare_song_for_gameplay(T* p, lua_State* L)
 	{
 		int result= p->prepare_song_for_gameplay();
@@ -3490,6 +3497,7 @@ public:
 		ADD_METHOD( SetStepsForEditMode );
 		ADD_METHOD( GetAutoGenFarg );
 		ADD_METHOD( SetAutoGenFarg );
+		ADD_METHOD( GetPlayerFailType );
 		ADD_METHOD(prepare_song_for_gameplay);
 	}
 };

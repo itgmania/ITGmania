@@ -3151,6 +3151,9 @@ end
 	<Function name='GetPlayerDisplayName' return='string' arguments='PlayerNumber pn'>
 		Returns the display name for player <code>pn</code>.
 	</Function>
+	<Function name='GetPlayerFailType' return='FailType' arguments='PlayerNumber pn' since='ITGmania 1.0.0'>
+		Returns the effective <Link class='ENUM' function='FailType' /> for player <code>pn</code>.
+	</Function>
 	<Function name='GetPlayerState' return='PlayerState' arguments='PlayerNumber pn'>
 		Returns the PlayerState for player <code>pn</code>.
 	</Function>

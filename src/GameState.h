@@ -336,6 +336,7 @@ public:
 	bool PlayerIsUsingModifier( PlayerNumber pn, const RString &sModifier );
 
 	FailType GetPlayerFailType( const PlayerState *pPlayerState ) const;
+	FailType GetPlayerFailType( PlayerNumber pn ) const { return GetPlayerFailType( m_pPlayerState[pn] ); }
 
 	// character stuff
 	Character* m_pCurCharacters[NUM_PLAYERS];
