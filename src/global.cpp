@@ -25,19 +25,6 @@
     #include "archutils/Unix/CrashHandler.h"
 #endif
 
-void FailWithMessage(const char* message)
-{
-    CHECKPOINT_M(message);
-    sm_crash(message);
-}
-
-void AssertWithMessage(bool condition, const char* message)
-{
-    if (unlikely(!condition)) {
-        FailWithMessage(message);
-    }
-}
-
 void sm_crash( const char *reason )
 {
 #if ( defined(_WIN32) && defined(CRASH_HANDLER) ) || defined(MACOSX) || defined(_XDBG)
