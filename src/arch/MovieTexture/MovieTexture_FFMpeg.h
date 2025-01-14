@@ -6,6 +6,7 @@
 #include "MovieTexture_Generic.h"
 
 #include <cstdint>
+#include <limits>
 #include <mutex>
 
 struct RageSurface;
@@ -27,7 +28,7 @@ static const int kSwsFlags = SWS_BICUBIC; // XXX: Reasonable default?
 struct FrameHolder {
 	avcodec::AVFrame* frame = avcodec::av_frame_alloc();
 	bool displayed = false;
-	int packet_num = -1; // Used as a sanity check during display.
+	std::size_t packet_num = std::numeric_limits<std::size_t>::max(); // Used as a sanity check during display.
 	std::mutex lock; // Protects the frame as it's being initialized.
 	~FrameHolder() {
 		if (frame != nullptr) {
@@ -147,7 +148,7 @@ private:
 	avcodec::SwsContext* av_sws_context_;
 	avcodec::AVCodecContext* av_stream_codec_;
 	avcodec::AVFormatContext* av_format_context_;
-	int total_frames_; // Total number of frames in the movie.
+	std::size_t total_frames_; // Total number of frames in the movie.
 
 	unsigned char* av_buffer_;
 	avcodec::AVIOContext* av_io_context_;
@@ -158,19 +159,19 @@ private:
 	// Therefore, the FrameBuffer represents a sliding window along the PacketBuffer.
 	std::vector<std::unique_ptr<PacketHolder>> packet_buffer_;
 	std::vector<std::unique_ptr<FrameHolder>> frame_buffer_;
-	int frame_buffer_position_ = 0;
-	int packet_buffer_position_ = 0;
+	std::size_t frame_buffer_position_ = 0;
+	std::size_t packet_buffer_position_ = 0;
 
 	// Offset for the frame_buffer_ when a looping movie goes back to
 	// the zeroeth frame. next_offset_ is written when the zeroeth frame
 	// is decoded, and when the last frame is displayed, it is applied to
 	// offset_.
-	int offset_ = 0;
-	int next_offset_ = 0;
+	std::size_t offset_ = 0;
+	std::size_t next_offset_ = 0;
 
 	// display_frame_num_ will often be the start of the sliding window,
 	// or the oldest Frame that is currently decoded.
-	int display_frame_num_ = 0;
+	std::size_t display_frame_num_ = 0;
 
 	// 0 = no EOF
 	// 1 = EOF while decoding

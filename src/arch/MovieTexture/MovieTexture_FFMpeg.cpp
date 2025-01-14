@@ -167,7 +167,7 @@ float MovieDecoder_FFMpeg::GetTimestamp() const
 	}
 
 	// In a logical situation, this means that display is outpacing decoding.
-	if (display_frame_num_ >= static_cast<int>(packet_buffer_.size())) {
+	if (display_frame_num_ >= packet_buffer_.size()) {
 		return 0;
 	}
 
@@ -185,7 +185,7 @@ float MovieDecoder_FFMpeg::GetTimestamp() const
 bool MovieDecoder_FFMpeg::IsCurrentFrameReady() {
 	// We're displaying faster than decoding. Do not even try to display the
 	// frame.
-	if (display_frame_num_ >= static_cast<int>(packet_buffer_.size())) {
+	if (display_frame_num_ >= packet_buffer_.size()) {
 		return false;
 	}
 
@@ -197,7 +197,7 @@ bool MovieDecoder_FFMpeg::IsCurrentFrameReady() {
 	// opposites. If the frame hasn't been displayed, it's ready. If it has
 	// been displayed, then it hasn't been overwritten and reset yet.
 	if (frame->displayed) {
-		LOG->Info("Frame %i not decoded, total frames: %i", display_frame_num_, total_frames_);
+		LOG->Info("Frame %zu not decoded, total frames: %zu", display_frame_num_, total_frames_);
 	}
 	return !frame->displayed;
 }
@@ -450,7 +450,7 @@ int MovieDecoder_FFMpeg::GetFrame(RageSurface* surface_out)
 		}
 	}
 
-	int display_frame_in_buffer = (display_frame_num_ + offset_) % frame_buffer_.size();
+	std::size_t display_frame_in_buffer = (display_frame_num_ + offset_) % frame_buffer_.size();
 	std::lock_guard<std::mutex> lock(frame_buffer_[display_frame_in_buffer]->lock);
 
 	// Sanity check.
@@ -468,7 +468,7 @@ int MovieDecoder_FFMpeg::GetFrame(RageSurface* surface_out)
 		}
 	}
 	else {
-		LOG->Warn("Unexpected frame trying to display! display_frame_num_ = %d, packet_num = %d", display_frame_num_, frame_buffer_[display_frame_in_buffer]->packet_num);
+		LOG->Warn("Unexpected frame trying to display! display_frame_num_ = %zu, packet_num = %zu", display_frame_num_, frame_buffer_[display_frame_in_buffer]->packet_num);
 	}
 
 	frame_buffer_[display_frame_in_buffer]->displayed = true;
@@ -594,7 +594,7 @@ RString MovieDecoder_FFMpeg::Open(RString file)
 		LOG->Trace("Video shorter than frame buffer, shrinking the buffer.");
 		frame_buffer_.resize(total_frames_);
 	}
-	LOG->Trace("Number of frames detected: %i", total_frames_);
+	LOG->Trace("Number of frames detected: %zu", total_frames_);
 
 	return RString();
 }
