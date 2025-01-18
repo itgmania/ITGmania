@@ -1627,6 +1627,88 @@ void ScreenSelectMusic::AfterStepsOrTrailChange( const std::vector<PlayerNumber>
 	}
 }
 
+void ScreenSelectMusic::SwitchToDifficulty(Difficulty d)
+{
+	if (!GAMESTATE->m_pCurCourse)
+	{
+		FOREACH_HumanPlayer(pn)
+		{
+			// Find the closest match to the given difficulty and StepsType.
+			int iCurDifference = -1;
+			int& iSelection = m_iSelection[pn];
+			int i = 0;
+			for (Steps* s : m_vpSteps)
+			{
+				// If the current steps are listed, use them.
+				if (GAMESTATE->m_pCurSteps[pn] == s)
+				{
+					iSelection = i;
+					break;
+				}
+
+				if (d != Difficulty_Invalid)
+				{
+					int iDifficultyDifference = std::abs(s->GetDifficulty() - d);
+					int iStepsTypeDifference = 0;
+					if (GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
+						iStepsTypeDifference = std::abs(s->m_StepsType - GAMESTATE->m_PreferredStepsType);
+					int iTotalDifference = iStepsTypeDifference * NUM_Difficulty + iDifficultyDifference;
+
+					if (iCurDifference == -1 || iTotalDifference < iCurDifference)
+					{
+						iSelection = i;
+						iCurDifference = iTotalDifference;
+					}
+				}
+				i += 1;
+			}
+
+			CLAMP(iSelection, 0, m_vpSteps.size() - 1);
+		}
+	}
+	else
+	{
+		FOREACH_HumanPlayer(pn)
+		{
+			// Find the closest match to the given difficulty.
+			int iCurDifference = -1;
+			int& iSelection = m_iSelection[pn];
+			int i = 0;
+			for (Trail* t : m_vpTrails)
+			{
+				// If the current trail is listed, use it.
+				if (GAMESTATE->m_pCurTrail[pn] == m_vpTrails[i])
+				{
+					iSelection = i;
+					break;
+				}
+
+				if (d != Difficulty_Invalid && GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
+				{
+					int iDifficultyDifference = std::abs(t->m_CourseDifficulty - d);
+					int iStepsTypeDifference = std::abs(t->m_StepsType - GAMESTATE->m_PreferredStepsType);
+					int iTotalDifference = iStepsTypeDifference * NUM_CourseDifficulty + iDifficultyDifference;
+
+					if (iCurDifference == -1 || iTotalDifference < iCurDifference)
+					{
+						iSelection = i;
+						iCurDifference = iTotalDifference;
+					}
+				}
+				i += 1;
+			}
+
+			CLAMP(iSelection, 0, m_vpTrails.size() - 1);
+		}
+	}
+
+	if (GAMESTATE->DifficultiesLocked())
+	{
+		FOREACH_HumanPlayer(p)
+			m_iSelection[p] = m_iSelection[GAMESTATE->GetMasterPlayerNumber()];
+	}
+}
+
 void ScreenSelectMusic::SwitchToPreferredDifficulty()
 {
 	if( !GAMESTATE->m_pCurCourse )
@@ -1882,7 +1964,21 @@ void ScreenSelectMusic::AfterMusicChange()
 		g_sCDTitlePath = pSong->GetCDTitlePath();
 		g_bWantFallbackCdTitle = true;
 
-		SwitchToPreferredDifficulty();
+		if (GAMESTATE->m_SortOrder == SORT_METER)
+		{
+			for (int i = m_vpSteps.size() - 1; i >= 0; i--)
+			{
+				if (m_vpSteps[i]->GetMeter() == StringToInt(GAMESTATE->sLastOpenSection))
+				{
+					SwitchToDifficulty(m_vpSteps[i]->GetDifficulty());
+					break;
+				}
+			}
+		}
+		else
+		{
+			SwitchToPreferredDifficulty();
+		}
 		break;
 
 	case WheelItemDataType_Course:
