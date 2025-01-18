@@ -1627,78 +1627,88 @@ void ScreenSelectMusic::AfterStepsOrTrailChange( const std::vector<PlayerNumber>
 	}
 }
 
+void ScreenSelectMusic::SwitchPlayerStepDifficulty(PlayerNumber pn, Difficulty d)
+{
+	// Find the closest match to the given difficulty and StepsType.
+	int iCurDifference = -1;
+	int& iSelection = m_iSelection[pn];
+	int i = 0;
+	for (Steps* s : m_vpSteps)
+	{
+		// If the current steps are listed, use them.
+		if (GAMESTATE->m_pCurSteps[pn] == s)
+		{
+			iSelection = i;
+			break;
+		}
+
+		if (d != Difficulty_Invalid)
+		{
+			int iDifficultyDifference = std::abs(s->GetDifficulty() - d);
+			int iStepsTypeDifference = 0;
+			if (GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
+				iStepsTypeDifference = std::abs(s->m_StepsType - GAMESTATE->m_PreferredStepsType);
+			int iTotalDifference = iStepsTypeDifference * NUM_Difficulty + iDifficultyDifference;
+
+			if (iCurDifference == -1 || iTotalDifference < iCurDifference)
+			{
+				iSelection = i;
+				iCurDifference = iTotalDifference;
+			}
+		}
+		i += 1;
+	}
+
+	CLAMP(iSelection, 0, m_vpSteps.size() - 1);
+}
+
+void ScreenSelectMusic::SwitchPlayerCourseDifficulty(PlayerNumber pn, Difficulty d)
+{
+	// Find the closest match to the given difficulty.
+	int iCurDifference = -1;
+	int& iSelection = m_iSelection[pn];
+	int i = 0;
+	for (Trail* t : m_vpTrails)
+	{
+		// If the current trail is listed, use it.
+		if (GAMESTATE->m_pCurTrail[pn] == m_vpTrails[i])
+		{
+			iSelection = i;
+			break;
+		}
+
+		if (d != Difficulty_Invalid && GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
+		{
+			int iDifficultyDifference = std::abs(t->m_CourseDifficulty - d);
+			int iStepsTypeDifference = std::abs(t->m_StepsType - GAMESTATE->m_PreferredStepsType);
+			int iTotalDifference = iStepsTypeDifference * NUM_CourseDifficulty + iDifficultyDifference;
+
+			if (iCurDifference == -1 || iTotalDifference < iCurDifference)
+			{
+				iSelection = i;
+				iCurDifference = iTotalDifference;
+			}
+		}
+		i += 1;
+	}
+
+	CLAMP(iSelection, 0, m_vpTrails.size() - 1);
+}
+
 void ScreenSelectMusic::SwitchToDifficulty(Difficulty d)
 {
 	if (!GAMESTATE->m_pCurCourse)
 	{
 		FOREACH_HumanPlayer(pn)
 		{
-			// Find the closest match to the given difficulty and StepsType.
-			int iCurDifference = -1;
-			int& iSelection = m_iSelection[pn];
-			int i = 0;
-			for (Steps* s : m_vpSteps)
-			{
-				// If the current steps are listed, use them.
-				if (GAMESTATE->m_pCurSteps[pn] == s)
-				{
-					iSelection = i;
-					break;
-				}
-
-				if (d != Difficulty_Invalid)
-				{
-					int iDifficultyDifference = std::abs(s->GetDifficulty() - d);
-					int iStepsTypeDifference = 0;
-					if (GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
-						iStepsTypeDifference = std::abs(s->m_StepsType - GAMESTATE->m_PreferredStepsType);
-					int iTotalDifference = iStepsTypeDifference * NUM_Difficulty + iDifficultyDifference;
-
-					if (iCurDifference == -1 || iTotalDifference < iCurDifference)
-					{
-						iSelection = i;
-						iCurDifference = iTotalDifference;
-					}
-				}
-				i += 1;
-			}
-
-			CLAMP(iSelection, 0, m_vpSteps.size() - 1);
+			SwitchPlayerStepDifficulty(pn, d);
 		}
 	}
 	else
 	{
 		FOREACH_HumanPlayer(pn)
 		{
-			// Find the closest match to the given difficulty.
-			int iCurDifference = -1;
-			int& iSelection = m_iSelection[pn];
-			int i = 0;
-			for (Trail* t : m_vpTrails)
-			{
-				// If the current trail is listed, use it.
-				if (GAMESTATE->m_pCurTrail[pn] == m_vpTrails[i])
-				{
-					iSelection = i;
-					break;
-				}
-
-				if (d != Difficulty_Invalid && GAMESTATE->m_PreferredStepsType != StepsType_Invalid)
-				{
-					int iDifficultyDifference = std::abs(t->m_CourseDifficulty - d);
-					int iStepsTypeDifference = std::abs(t->m_StepsType - GAMESTATE->m_PreferredStepsType);
-					int iTotalDifference = iStepsTypeDifference * NUM_CourseDifficulty + iDifficultyDifference;
-
-					if (iCurDifference == -1 || iTotalDifference < iCurDifference)
-					{
-						iSelection = i;
-						iCurDifference = iTotalDifference;
-					}
-				}
-				i += 1;
-			}
-
-			CLAMP(iSelection, 0, m_vpTrails.size() - 1);
+			SwitchPlayerCourseDifficulty(pn, d);
 		}
 	}
 
@@ -1715,72 +1725,14 @@ void ScreenSelectMusic::SwitchToPreferredDifficulty()
 	{
 		FOREACH_HumanPlayer( pn )
 		{
-			// Find the closest match to the user's preferred difficulty and StepsType.
-			int iCurDifference = -1;
-			int &iSelection = m_iSelection[pn];
-			int i = 0;
-			for (Steps *s : m_vpSteps)
-			{
-				// If the current steps are listed, use them.
-				if( GAMESTATE->m_pCurSteps[pn] == s )
-				{
-					iSelection = i;
-					break;
-				}
-
-				if( GAMESTATE->m_PreferredDifficulty[pn] != Difficulty_Invalid  )
-				{
-					int iDifficultyDifference = std::abs( s->GetDifficulty() - GAMESTATE->m_PreferredDifficulty[pn] );
-					int iStepsTypeDifference = 0;
-					if( GAMESTATE->m_PreferredStepsType != StepsType_Invalid )
-						iStepsTypeDifference = std::abs( s->m_StepsType - GAMESTATE->m_PreferredStepsType );
-					int iTotalDifference = iStepsTypeDifference * NUM_Difficulty + iDifficultyDifference;
-
-					if( iCurDifference == -1 || iTotalDifference < iCurDifference )
-					{
-						iSelection = i;
-						iCurDifference = iTotalDifference;
-					}
-				}
-				i += 1;
-			}
-
-			CLAMP( iSelection, 0, m_vpSteps.size()-1 );
+			SwitchPlayerStepDifficulty(pn, GAMESTATE->m_PreferredDifficulty[pn]);
 		}
 	}
 	else
 	{
 		FOREACH_HumanPlayer( pn )
 		{
-			// Find the closest match to the user's preferred difficulty.
-			int iCurDifference = -1;
-			int &iSelection = m_iSelection[pn];
-			int i = 0;
-			for (Trail *t : m_vpTrails)
-			{
-				// If the current trail is listed, use it.
-				if( GAMESTATE->m_pCurTrail[pn] == m_vpTrails[i] )
-				{
-					iSelection = i;
-					break;
-				}
-
-				if( GAMESTATE->m_PreferredCourseDifficulty[pn] != Difficulty_Invalid  &&  GAMESTATE->m_PreferredStepsType != StepsType_Invalid  )
-				{
-					int iDifficultyDifference = std::abs( t->m_CourseDifficulty - GAMESTATE->m_PreferredCourseDifficulty[pn] );
-					int iStepsTypeDifference = std::abs( t->m_StepsType - GAMESTATE->m_PreferredStepsType );
-					int iTotalDifference = iStepsTypeDifference * NUM_CourseDifficulty + iDifficultyDifference;
-
-					if( iCurDifference == -1 || iTotalDifference < iCurDifference )
-					{
-						iSelection = i;
-						iCurDifference = iTotalDifference;
-					}
-				}
-				i += 1;
-			}
-
-			CLAMP( iSelection, 0, m_vpTrails.size()-1 );
+			SwitchPlayerCourseDifficulty(pn, GAMESTATE->m_PreferredCourseDifficulty[pn]);
 		}
 	}
 
