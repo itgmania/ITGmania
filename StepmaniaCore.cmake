@@ -338,6 +338,11 @@ elseif(LINUX OR BSD)
 
   set(OpenGL_GL_PREFERENCE GLVND)
   find_package(OpenGL REQUIRED)
+  if (NOT OPENGL_GLU_FOUND)  # it's an optional component of OpenGL, but we use it for glew build
+    message(FATAL_ERROR "libglu was not found")
+  endif()
+
+  find_package(udev REQUIRED)
 endif(WIN32) # LINUX OR BSD, APPLE
 
 configure_file("${SM_SRC_DIR}/config.in.hpp"
