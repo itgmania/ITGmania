@@ -22,7 +22,7 @@ Group::Group() {
     m_sTranslitTitle = "";
     m_sSeries = "";
     m_fSyncOffset = 0;
-    m_bHasGroupIni = false;
+    m_bHasPackIni = false;
     m_iYearReleased = 0;
     m_sBannerPath = "";
     m_sCredits.clear();
@@ -35,7 +35,7 @@ Group::~Group() {
 }
 
 Group::Group(const RString& sDir, const RString& sGroupDirName) {
-    RString sGroupIniPath = sDir + sGroupDirName + "/Group.ini";
+    RString sPackIniPath = sDir + sGroupDirName + "/pack.ini";
     RString credits = "";
     RString sDisplayTitle = sGroupDirName;
     RString SortTitle = sGroupDirName;
@@ -45,9 +45,9 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
     RString authorsNotes = "";
     float fOffset = PREFSMAN->m_fDefaultGroupOffsetSeconds;
 
-    if (FILEMAN->DoesFileExist(sGroupIniPath)) {
+    if (FILEMAN->DoesFileExist(sPackIniPath)) {
         IniFile ini;
-        ini.ReadFile(sGroupIniPath);
+        ini.ReadFile(sPackIniPath);
         ini.GetValue("Group", "DisplayTitle", sDisplayTitle);
         Trim(sDisplayTitle);
         if (sDisplayTitle.empty()) {
@@ -82,13 +82,13 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
         ini.GetValue("Group", "Credits", credits);
         ini.GetValue("Group", "AuthorsNotes", authorsNotes);
     } else {
-        m_bHasGroupIni = false;
+        m_bHasPackIni = false;
     }
     
 	// Look for a group banner in this group folder
 	std::vector<RString> arrayGroupBanners;
 	
-	// First check if there is a banner provided in group.ini
+	// First check if there is a banner provided in pack.ini
 	if(!bannerPath.empty())
 	{
 		GetDirListing(sDir + sGroupDirName + "/" + bannerPath, arrayGroupBanners);
@@ -205,9 +205,9 @@ public:
         return 1;
     }
 
-    static int HasGroupIni(T* p, lua_State *L)
+    static int HasPackIni(T* p, lua_State *L)
     {
-        lua_pushboolean(L, p->HasGroupIni());
+        lua_pushboolean(L, p->HasPackIni());
         return 1;
     }
 
@@ -244,7 +244,7 @@ public:
 		ADD_METHOD(GetTranslitTitle);
 		ADD_METHOD(GetSeries);
 		ADD_METHOD(GetSyncOffset);
-		ADD_METHOD(HasGroupIni);
+		ADD_METHOD(HasPackIni);
 		ADD_METHOD(GetBannerPath);
 		ADD_METHOD(GetStepArtistCredits);
 		ADD_METHOD(GetAuthorsNotes);
