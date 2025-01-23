@@ -10,7 +10,13 @@
 
 
 void EditModePlayerManager::AddPlayers(const NoteData& note_data) {
-	FOREACH_EnabledPlayer(pn){
+	FOREACH_EnabledPlayer(pn) {
+		// In case of a routine chart, both players are actually seen as
+		// enabled. This isn't desired, since the playerState and inputs in
+		// routine charts eventually collapse down only to P1.
+		if ((GAMESTATE->GetCurrentStyle(GAMESTATE->GetMasterPlayerNumber())->m_StyleType == StyleType_TwoPlayersSharedSides) && pn != PLAYER_1) {
+			continue;
+		}
 		players_[pn] = std::make_shared<PlayerPlus>();
 
 		PlayerPlus& player = *players_[pn];
