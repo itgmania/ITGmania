@@ -9,7 +9,6 @@
 #include "archutils/win32/DebugInfoHunt.h"
 #include "archutils/win32/ErrorStrings.h"
 #include "archutils/win32/RestartProgram.h"
-#include "archutils/win32/GotoURL.h"
 #include "archutils/Win32/RegistryAccess.h"
 
 #include "VersionHelpers.h"
@@ -169,11 +168,6 @@ void ArchHooks_Win32::UnBoostPriority()
 void ArchHooks_Win32::SetupConcurrentRenderingThread()
 {
 	SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL );
-}
-
-bool ArchHooks_Win32::GoToURL( RString sUrl )
-{
-	return ::GotoURL( sUrl );
 }
 
 float ArchHooks_Win32::GetDisplayAspectRatio()

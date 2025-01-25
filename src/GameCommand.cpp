@@ -832,16 +832,6 @@ void GameCommand::ApplySelf( const std::vector<PlayerNumber> &vpns ) const
 	if( !m_sProfileID.empty() )
 		for (PlayerNumber const &pn : vpns)
 			ProfileManager::m_sDefaultLocalProfileID[pn].Set( m_sProfileID );
-	if( !m_sUrl.empty() )
-	{
-		if( HOOKS->GoToURL( m_sUrl ) )
-		{
-			if( m_bUrlExits )
-				SCREENMAN->SetNewScreen( "ScreenExit" );
-		}
-		else
-			ScreenPrompt::Prompt( SM_None, COULD_NOT_LAUNCH_BROWSER );
-	}
 
 	/* If we're going to stop music, do so before preparing new screens, so we
 	 * don't stop music between preparing screens and loading screens. */

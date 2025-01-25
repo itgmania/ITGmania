@@ -6,7 +6,6 @@
 #include "archutils/Win32/WindowsResources.h"
 #include "archutils/Win32/DialogUtil.h"
 #include "archutils/Win32/ErrorStrings.h"
-#include "archutils/Win32/GotoURL.h"
 #include "archutils/Win32/RestartProgram.h"
 #include "archutils/Win32/CrashHandlerNetworking.h"
 #include "archutils/Win32/WindowsDialogBox.h"
@@ -766,35 +765,10 @@ INT_PTR CrashDialog::HandleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
 			EndDialog( hDlg, FALSE );
 			break;
 		case IDC_BUTTON_REPORT:
-			GotoURL( REPORT_BUG_URL );
+			// safe to remove button?
 			break;
 		case IDC_BUTTON_AUTO_REPORT:
-			if( !m_sUpdateURL.empty() )
-			{
-				/* We already sent the report, were told that there's an update,
-				 * and substituted the URL. */
-				GotoURL( m_sUpdateURL );
-				break;
-			}
-
-			ShowWindow( GetDlgItem(hDlg, IDC_BUTTON_AUTO_REPORT), false );
-			ShowWindow( GetDlgItem(hDlg, IDC_PROGRESS), true );
-			SetWindowText( GetDlgItem(hDlg, IDC_MAIN_TEXT), REPORTING_THE_PROBLEM.GetValue() );
-			SetWindowText( GetDlgItem(hDlg, IDC_BUTTON_CLOSE), CANCEL.GetValue() );
-			SendDlgItemMessage( hDlg, IDC_PROGRESS, PBM_SETRANGE, 0, MAKELPARAM(0,100) );
-			SendDlgItemMessage( hDlg, IDC_PROGRESS, PBM_SETPOS, 0, 0 );
-
-			// Create the form data to send.
-			m_pPost = new NetworkPostData;
-			m_pPost->SetData( "Product", PRODUCT_ID );
-			m_pPost->SetData( "Version", product_version );
-			m_pPost->SetData( "Arch", HOOKS->GetArchName().c_str() );
-			m_pPost->SetData( "Report", m_sCrashReport );
-			m_pPost->SetData( "Reason", m_CrashData.m_CrashInfo.m_CrashReason );
-
-			m_pPost->Start( CRASH_REPORT_HOST, CRASH_REPORT_PORT, CRASH_REPORT_PATH );
-
-			SetTimer( hDlg, 0, 100, nullptr );
+			// same here
 			break;
 		}
 		break;

@@ -18,8 +18,6 @@ public:
 	void MountInitialFilesystems( const RString &sDirOfExecutable );
 	float GetDisplayAspectRatio() { return 4.0f/3; }
 
-	bool GoToURL( RString sUrl );
-
 	static clockid_t GetClock();
 
 	RString GetClipboard();

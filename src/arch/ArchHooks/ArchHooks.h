@@ -114,11 +114,6 @@ public:
 	 */
 	bool AppFocusChanged();
 
-	/*
-	 * Open a URL in the default web browser
-	 */
-	virtual bool GoToURL( RString sUrl );
-
 	virtual float GetDisplayAspectRatio() = 0;
 
 	/** @brief Fetch the contents of the system clipboard. */

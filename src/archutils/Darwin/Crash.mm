@@ -54,11 +54,9 @@ void CrashHandler::InformUserOfCrash( const RString& sPath )
 	switch( response )
 	{
 	case kCFUserNotificationDefaultResponse:
-		HOOKS->GoToURL( REPORT_BUG_URL );
 		// Fall through.
 	case kCFUserNotificationOtherResponse:
-		// Open the file with the default application (probably TextEdit).
-		HOOKS->GoToURL( "file://" + sPath );
+		// Open the file with the default application (probably TextEdit). [unimplemented]
 		break;
 	}
 	CFRelease( sBody );
