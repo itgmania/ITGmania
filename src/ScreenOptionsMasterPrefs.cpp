@@ -710,7 +710,7 @@ static void GlobalOffsetSeconds( int &sel, bool ToSel, const ConfOption *pConfOp
 	MoveMap( sel, pConfOption, ToSel, mapping, ARRAYLEN(mapping) );
 }
 
-static void DefaultGroupOffsetSeconds( int &sel, bool ToSel, const ConfOption *pConfOption )
+static void MachineSyncBias( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
 	const float mapping[] = { 0.0f, 0.009f };
 	MoveMap( sel, pConfOption, ToSel, mapping, ARRAYLEN(mapping) );
@@ -947,7 +947,7 @@ static void InitializeConfOptions()
 			c.AddOption( ssprintf("%+i ms", i) );
 		ADD( c );
 	}
-	ADD( ConfOption( "DefaultGroupOffsetSeconds",			DefaultGroupOffsetSeconds,		"Null","|ITG" ) );
+	ADD( ConfOption( "MachineSyncBias",			MachineSyncBias,		"Null","|ITG" ) );
 	ADD( ConfOption( "EnableAttackSounds",		MovePref<bool>,		"No","Yes" ) );
 	ADD( ConfOption( "EnableMineHitSound",		MovePref<bool>,		"No","Yes" ) );
 	ADD( ConfOption( "RateModPreservesPitch",		MovePref<bool>,		"No","Yes") );

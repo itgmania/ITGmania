@@ -240,7 +240,7 @@ public:
 	Preference<ShowDancingCharacters>		m_ShowDancingCharacters;
 	Preference<bool>	m_bUseUnlockSystem;
 	Preference<float>	m_fGlobalOffsetSeconds;
-	Preference<float>	m_fDefaultGroupOffsetSeconds;
+	Preference<float>	m_fMachineSyncBias;
 	Preference<int>	m_iProgressiveLifebar;
 	Preference<int>	m_iProgressiveStageLifebar;
 	Preference<int>	m_iProgressiveNonstopLifebar;
