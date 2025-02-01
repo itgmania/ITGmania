@@ -605,6 +605,16 @@ bool SongManager::DoesSongGroupExist( RString sSongGroup ) const
 	return find( m_sSongGroupNames.begin(), m_sSongGroupNames.end(), sSongGroup ) != m_sSongGroupNames.end();
 }
 
+bool SongManager::HasPackIni(RString sSongGroup) const
+{
+	Group* group = GetGroupFromName(sSongGroup);
+	if(group != nullptr)
+	{
+		return group->HasPackIni();
+	}
+	return false;
+}
+
 RageColor SongManager::GetSongGroupColor( const RString &sSongGroup ) const
 {
 	for( unsigned i=0; i<m_sSongGroupNames.size(); i++ )
