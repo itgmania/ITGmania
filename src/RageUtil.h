@@ -328,7 +328,7 @@ void fapproach( float& val, float other_val, float to_move );
 /* Return a positive x mod y. */
 float fmodfp( float x, float y );
 
-int power_of_two( int input );
+int power_of_two( int v );
 bool IsAnInt( const RString &s );
 bool IsHexVal( const RString &s );
 RString BinaryToHex( const void *pData_, size_t iNumBytes );

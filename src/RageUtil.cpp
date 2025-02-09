@@ -122,25 +122,21 @@ float fmodfp(float x, float y)
 	return x;
 }
 
-int power_of_two( int input )
+/* https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2 */
+int power_of_two( int v )
 {
-	int exp = 31, i = input;
-	if (i >> 16)
-		i >>= 16;
-	else exp -= 16;
-	if (i >> 8)
-		i >>= 8;
-	else exp -= 8;
-	if (i >> 4)
-		i >>= 4;
-	else exp -= 4;
-	if (i >> 2)
-		i >>= 2;
-	else exp -= 2;
-	if (i >> 1 == 0)
-		exp -= 1;
-	int value = 1 << exp;
-	return (input == value) ? value : (value << 1);
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+
+	/* Always be sure to return a value of at least 1. In the event of any edge
+	 * cases, such as a zero or negative input, the returned value will be `1`. */
+	v += (v == 0);
+	return v;
 }
 
 bool IsAnInt( const RString &s )
