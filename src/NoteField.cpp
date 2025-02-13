@@ -378,11 +378,7 @@ void NoteField::Update( float fDeltaTime )
 	NoteDisplay::Update( fDeltaTime );
 	/* Update all NoteDisplays. Hack: We need to call this once per frame, not
 	 * once per player. */
-	// TODO: Remove use of PlayerNumber.
-
-	PlayerNumber pn = m_pPlayerState->m_PlayerNumber;
-	if( pn == GAMESTATE->GetMasterPlayerNumber() )
-		NoteDisplay::Update( fDeltaTime );
+	NoteDisplay::Update( fDeltaTime );
 }
 
 float NoteField::GetWidth() const
