@@ -267,6 +267,8 @@ LuaManager::LuaManager()
 	lua_pushcfunction( L, luaopen_string ); lua_call( L, 0, 0 );
 	lua_pushcfunction( L, luaopen_table ); lua_call( L, 0, 0 );
 	lua_pushcfunction( L, luaopen_debug ); lua_call( L, 0, 0 );
+        lua_pushcfunction( L, luaopen_os ); lua_call( L, 0, 0 );
+
 
 	// Store the thread pool in a table on the stack, in the main thread.
 #define THREAD_POOL 1
