@@ -416,9 +416,15 @@ void SetMeasureInfo(StepsTagInfo& info)
 		split((*info.params)[1], "|", values, true);
 
 		MeasureInfo v[NUM_PLAYERS];
-		FOREACH_PlayerNumber(pn)
+		
+		// Sanity check that any data was actually loaded
+		// (invalid charts may end up with "#MEASUREINFO:|;" in the cache
+		if(values.size() == NUM_PLAYERS)
 		{
-			v[pn].FromString(values[pn]);
+			FOREACH_PlayerNumber(pn)
+			{
+				v[pn].FromString(values[pn]);
+			}
 		}
 		info.steps->SetCachedMeasureInfo(v);
 	}
