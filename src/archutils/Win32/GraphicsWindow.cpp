@@ -13,6 +13,7 @@
 #include "archutils/Win32/GetFileInformation.h"
 #include "CommandLineActions.h"
 #include "DirectXHelpers.h"
+#include "PrefsManager.h"
 
 #include <optional>
 #include <set>
@@ -126,8 +127,12 @@ static LRESULT CALLBACK GraphicsWindow_WndProc( HWND hWnd, UINT msg, WPARAM wPar
 		case WM_SETCURSOR:
 			if( !g_CurrentParams.windowed )
 			{
-				//Don't hide the cursor when full screened since we have ShowMouseCursor as an option.
-				//SetCursor(nullptr);
+				// We check if the preference is false because we don't want
+				// to show the cursor if the user has set it to false.
+				if (!PREFSMAN->m_bShowMouseCursor.Get())
+				{
+					SetCursor(nullptr);
+				}
 				return 1;
 			}
 			break;
