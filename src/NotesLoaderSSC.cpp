@@ -408,19 +408,52 @@ void SetTechCounts(StepsTagInfo& info)
 	info.ssc_format= true;
 }
 
-void SetMeasureInfo(StepsTagInfo& info)
+void SetNpsPerMeasure(StepsTagInfo& info)
 {
 	if (info.from_cache || info.for_load_edit)
 	{
 		std::vector<RString> values;
-		split((*info.params)[1], "|", values, true);
+		split((*info.params)[1], ",", values, true);
+		std::size_t measures_per_player = values.size() / NUM_PlayerNumber;
+		std::vector<std::vector<float>> npsPerMeasure;
+		npsPerMeasure.resize(NUM_PLAYERS);
 
-		MeasureInfo v[NUM_PLAYERS];
 		FOREACH_PlayerNumber(pn)
 		{
-			v[pn].FromString(values[pn]);
+			npsPerMeasure[pn].resize(measures_per_player, 0);
+			for(std::size_t i= 0; i < measures_per_player; ++i)
+			{
+				npsPerMeasure[pn][i]= StringToFloat(values[pn * measures_per_player + i]);
+			}
 		}
-		info.steps->SetCachedMeasureInfo(v);
+		info.steps->SetCachedNpsPerMeasure(npsPerMeasure);
+	}
+	else
+	{
+		// just recalc at time.
+	}
+	info.ssc_format= true;
+}
+
+void SetNotesPerMeasure(StepsTagInfo& info)
+{
+	if (info.from_cache || info.for_load_edit)
+	{
+		std::vector<RString> values;
+		split((*info.params)[1], ",", values, true);
+		std::size_t measures_per_player = values.size() / NUM_PlayerNumber;
+		std::vector<std::vector<int>> notesPerMeasure;
+		notesPerMeasure.resize(NUM_PLAYERS);
+
+		FOREACH_PlayerNumber(pn)
+		{
+			notesPerMeasure[pn].resize(measures_per_player, 0);
+			for(std::size_t i= 0; i < measures_per_player; ++i)
+			{
+				notesPerMeasure[pn][i]= StringToInt(values[pn * measures_per_player + i]);
+			}
+		}
+		info.steps->SetCachedNotesPerMeasure(notesPerMeasure);
 	}
 	else
 	{
@@ -670,7 +703,8 @@ struct ssc_parser_helper_t
 		steps_tag_handlers["FAKES"]= &SetStepsFakes;
 		steps_tag_handlers["LABELS"]= &SetStepsLabels;
 		steps_tag_handlers["TECHCOUNTS"] = &SetTechCounts;
-		steps_tag_handlers["MEASUREINFO"] = &SetMeasureInfo;
+		steps_tag_handlers["NPSPERMEASURE"] = &SetNpsPerMeasure;
+		steps_tag_handlers["NOTESPERMEASURE"] = &SetNotesPerMeasure;
 
 		/* If this is called, the chart does not use the same attacks
 		 * as the Song's timing. No other changes are required. */

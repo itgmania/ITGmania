@@ -439,16 +439,31 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 			}
 		}
 		lines.push_back(ssprintf("#TECHCOUNTS:%s;", join(",", asTechCounts).c_str()));
-
-		std::vector<RString> asMeasureInfo;
-		FOREACH_PlayerNumber( pn )
+		
+		std::vector<RString> asNpsPerMeasure;
+		FOREACH_PlayerNumber(pn)
 		{
-			const MeasureInfo &ms = in.GetMeasureInfo(pn);
-			asMeasureInfo.push_back(ms.ToString());
+			const std::vector<float> &npsPerMeasure = in.GetNpsPerMeasure(pn);
+			for(unsigned i = 0; i < npsPerMeasure.size(); i++)
+			{
+				asNpsPerMeasure.push_back(ssprintf("%.3f", npsPerMeasure[i]));
+			}
 		}
-		RString allMeasureInfo = "#MEASUREINFO:" + join("|", asMeasureInfo) + ";";
-		lines.push_back(allMeasureInfo);
+		
+		lines.push_back( ssprintf( "#NPSPERMEASURE:%s;", join(",",asNpsPerMeasure).c_str() ) );
 
+		std::vector<RString> asNotesPerMeasure;
+		FOREACH_PlayerNumber(pn)
+		{
+			const std::vector<int> &notesPerMeasure = in.GetNotesPerMeasure(pn);
+			for(unsigned i = 0; i < notesPerMeasure.size(); i++)
+			{
+				asNotesPerMeasure.push_back(ssprintf("%d", notesPerMeasure[i]));
+			}
+		}
+		
+		lines.push_back( ssprintf( "#NOTESPERMEASURE:%s;", join(",",asNotesPerMeasure).c_str() ) );
+		
 		// NOTE(MV): #STEPFILENAME has to be at the end of the cache tags,
 		// because it's used in SSCLoader::LoadFromSimfile to determine when
 		// to switch the state back to GETTING_SONG_INFO, which means any tags

@@ -4,11 +4,6 @@
 #include "GameConstantsAndTypes.h"
 #include "NoteData.h"
 
-/** This is a container for per-measure stats of a stepchart.
- This data is calculated and saved to the song cache files as the #MEASUREINFO tag.
- This data is provided to the theme via lua functions in Steps.cpp and Trail.cpp,
- */
-
 struct MeasureInfo
 {
 	int measureCount;
