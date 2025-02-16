@@ -757,35 +757,29 @@ void Steps::SetCachedTechCounts( const TechCounts ts[NUM_PLAYERS] )
 	m_bAreCachedTechCountsValuesJustLoaded = true;
 }
 
-void Steps::SetCachedNpsPerMeasure(std::vector<float>& npsPerMeasure, PlayerNumber pn)
+void Steps::SetCachedNpsPerMeasure(std::vector<std::vector<float>>& npsPerMeasure)
 {
 	DeAutogen();
+	m_CachedNpsPerMeasure.assign(npsPerMeasure.begin(), npsPerMeasure.end());
+	m_PeakNps.clear();
 	
-	if(m_CachedNpsPerMeasure.size() <= pn)
+	for(std::vector<float> n : npsPerMeasure)
 	{
-		m_CachedNpsPerMeasure.resize(pn + 1);
-		m_PeakNps.resize(pn + 1);
+		std::vector<float>::iterator peakNps = std::max_element(n.begin(), n.end());
+		if(peakNps != n.end())
+		{
+			m_PeakNps.push_back(*peakNps);
+		}
 	}
 	
-	m_CachedNpsPerMeasure[pn].assign(npsPerMeasure.begin(), npsPerMeasure.end());
-	std::vector<float>::iterator peakNps = std::max_element(npsPerMeasure.begin(), npsPerMeasure.end());
-	if(peakNps != npsPerMeasure.end())
-	{
-		m_PeakNps[pn] = *peakNps;
-	}
 	m_AreCachedNpsPerMeasureJustLoaded = true;
 }
 
-void Steps::SetCachedNotesPerMeasure(std::vector<int>& notesPerMeasure, PlayerNumber pn)
+void Steps::SetCachedNotesPerMeasure(std::vector<std::vector<int>>& notesPerMeasure)
 {
 	DeAutogen();
 	
-	if(m_CachedNotesPerMeasure.size() <= pn)
-	{
-		m_CachedNotesPerMeasure.resize(pn + 1);
-	}
-	
-	m_CachedNotesPerMeasure[pn].assign(notesPerMeasure.begin(), notesPerMeasure.end());
+	m_CachedNotesPerMeasure.assign(notesPerMeasure.begin(), notesPerMeasure.end());
 	m_AreCachedNotesPerMeasureJustLoaded = true;
 }
 

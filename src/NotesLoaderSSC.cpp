@@ -421,18 +421,20 @@ void SetNpsPerMeasure(StepsTagInfo& info)
 			LOG->Warn("#NPSPERMEASURE has more sections (%zu) than possible number of players (%d)!", valuesPerPlayer.size(), NUM_PlayerNumber);
 		}
 		
+		std::vector<std::vector<float>> npsPerMeasures;
 		for(std::size_t pn = 0; pn < valuesPerPlayer.size() && pn < NUM_PlayerNumber; pn++)
 		{
 			std::vector<RString> values;
 			split(valuesPerPlayer[pn], ",", values, true);
-			std::vector<int> npsPerMeasure;
+			std::vector<float> npsPerMeasure;
 			npsPerMeasure.resize(values.size());
 			for(std::size_t i = 0; i < values.size(); i++)
 			{
 				npsPerMeasure[i] = StringToFloat(values[i]);
 			}
-			info.steps->SetCachedNotesPerMeasure(npsPerMeasure, static_cast<PlayerNumber>(pn));
+			npsPerMeasures.push_back(npsPerMeasure);
 		}
+		info.steps->SetCachedNpsPerMeasure(npsPerMeasures);
 	}
 	else
 	{
@@ -454,6 +456,7 @@ void SetNotesPerMeasure(StepsTagInfo& info)
 			
 		}
 		
+		std::vector<std::vector<int>> notesPerMeasures;
 		for(std::size_t pn = 0; pn < valuesPerPlayer.size() && pn < NUM_PlayerNumber; pn++)
 		{
 			std::vector<RString> values;
@@ -464,8 +467,9 @@ void SetNotesPerMeasure(StepsTagInfo& info)
 			{
 				notesPerMeasure[i] = StringToInt(values[i]);
 			}
-			info.steps->SetCachedNotesPerMeasure(notesPerMeasure, static_cast<PlayerNumber>(pn));
+			notesPerMeasures.push_back(notesPerMeasure);
 		}
+		info.steps->SetCachedNotesPerMeasure(notesPerMeasures);
 	}
 	else
 	{

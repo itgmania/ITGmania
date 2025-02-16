@@ -145,8 +145,8 @@ public:
 	void SetMeter( int meter );
 	void SetCachedRadarValues( const RadarValues v[NUM_PLAYERS] );
 	void SetCachedTechCounts(const TechCounts ts[NUM_PLAYERS]);
-	void SetCachedNpsPerMeasure(std::vector<float>& npsPerMeasure, PlayerNumber pn);
-	void SetCachedNotesPerMeasure(std::vector<int>& notesPerMeasure, PlayerNumber pn);
+	void SetCachedNpsPerMeasure(std::vector<std::vector<float>>& npsPerMeasure);
+	void SetCachedNotesPerMeasure(std::vector<std::vector<int>>& notesPerMeasure);
 	float PredictMeter() const;
 
 	unsigned GetHash() const;
