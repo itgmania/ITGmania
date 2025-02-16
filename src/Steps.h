@@ -145,8 +145,8 @@ public:
 	void SetMeter( int meter );
 	void SetCachedRadarValues( const RadarValues v[NUM_PLAYERS] );
 	void SetCachedTechCounts(const TechCounts ts[NUM_PLAYERS]);
-	void SetCachedNpsPerMeasure(std::vector<std::vector<float>>& npsPerMeasure);
-	void SetCachedNotesPerMeasure(std::vector<std::vector<int>>& notesPerMeasure);
+	void SetCachedNpsPerMeasure(std::vector<float>& npsPerMeasure, PlayerNumber pn);
+	void SetCachedNotesPerMeasure(std::vector<int>& notesPerMeasure, PlayerNumber pn);
 	float PredictMeter() const;
 
 	unsigned GetHash() const;
@@ -180,9 +180,12 @@ public:
 
 	void CalculateMeasureInfo();
 	
-	const std::vector<float> &GetNpsPerMeasure(PlayerNumber pn) const { return Real()->m_CachedNpsPerMeasure[pn]; }
-	const std::vector<int> &GetNotesPerMeasure(PlayerNumber pn) const { return Real()->m_CachedNotesPerMeasure[pn]; }
-	float GetPeakNps(PlayerNumber pn) const { return Real()->m_PeakNps[pn]; }
+	const std::vector<std::vector<float>> & GetAllNpsPerMeasures() const { return Real()->m_CachedNpsPerMeasure; }
+	const std::vector<float> &GetNpsPerMeasure(PlayerNumber pn) const;
+	const std::vector<std::vector<int>> & GetAllNotesPerMeasures() const { return Real()->m_CachedNotesPerMeasure; };
+	const std::vector<int> &GetNotesPerMeasure(PlayerNumber pn) const;
+	
+	float GetPeakNps(PlayerNumber pn) const;
 
 	/**
 	 * @brief The TimingData used by the Steps.
@@ -287,7 +290,7 @@ private:
 	std::vector<std::vector<int>> m_CachedNotesPerMeasure;
 	bool m_AreCachedNotesPerMeasureJustLoaded;
 	
-	float m_PeakNps[NUM_PLAYERS];
+	std::vector<float> m_PeakNps;
 	
 	
 	

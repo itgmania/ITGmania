@@ -440,29 +440,30 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 		}
 		lines.push_back(ssprintf("#TECHCOUNTS:%s;", join(",", asTechCounts).c_str()));
 		
-		std::vector<RString> asNpsPerMeasure;
-		FOREACH_PlayerNumber(pn)
+		// NpsPerMeasure and NotesPerMeasure are stored differently from Radar Values and Tech Counts,
+		// because the number of measures is variable.
+		// For charts that have different steps per player, each set of values is separated
+		// with pipes "|".
+		// The vast majority of charts don't, so there's no reason to store duplicated data.
+		const std::vector<std::vector<float>> &allNpsPerMeasures = in.GetAllNpsPerMeasures();
+		std::vector<RString> npsPerMeasureStrings;
+		
+		for(std::vector<float> npsPerMeasure : allNpsPerMeasures)
 		{
-			const std::vector<float> &npsPerMeasure = in.GetNpsPerMeasure(pn);
-			for(unsigned i = 0; i < npsPerMeasure.size(); i++)
-			{
-				asNpsPerMeasure.push_back(ssprintf("%.3f", npsPerMeasure[i]));
-			}
+			npsPerMeasureStrings.push_back(serialize(npsPerMeasure, ",", 3));
 		}
 		
-		lines.push_back( ssprintf( "#NPSPERMEASURE:%s;", join(",",asNpsPerMeasure).c_str() ) );
+		lines.push_back( ssprintf( "#NPSPERMEASURE:%s;", join("|",npsPerMeasureStrings).c_str() ) );
 
-		std::vector<RString> asNotesPerMeasure;
-		FOREACH_PlayerNumber(pn)
+		const std::vector<std::vector<int>> &allNotesPerMeasures = in.GetAllNotesPerMeasures();
+		std::vector<RString> notesPerMeasureStrings;
+		
+		for(std::vector<int> notesPerMeasure : allNotesPerMeasures)
 		{
-			const std::vector<int> &notesPerMeasure = in.GetNotesPerMeasure(pn);
-			for(unsigned i = 0; i < notesPerMeasure.size(); i++)
-			{
-				asNotesPerMeasure.push_back(ssprintf("%d", notesPerMeasure[i]));
-			}
+			notesPerMeasureStrings.push_back(serialize(notesPerMeasure, ","));
 		}
 		
-		lines.push_back( ssprintf( "#NOTESPERMEASURE:%s;", join(",",asNotesPerMeasure).c_str() ) );
+		lines.push_back( ssprintf( "#NOTESPERMEASURE:%s;", join("|",notesPerMeasureStrings).c_str() ) );
 		
 		// NOTE(MV): #STEPFILENAME has to be at the end of the cache tags,
 		// because it's used in SSCLoader::LoadFromSimfile to determine when
