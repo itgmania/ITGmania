@@ -755,88 +755,17 @@ bool RageSoundReader_MP3::MADLIB_rewind()
 
 /* Methods of seeking:
  *
- * 1. We can jump based on a TOC.  We potentially have two; the Xing TOC and our
- *    own index.  The Xing TOC is only accurate to 1/256th of the file size,
- *    so it's unsuitable for precise seeks.  Our own TOC is byte-accurate.
- *    (SetPosition_toc)
+ * 1. We can seek from any position to any higher position by decoding headers.
+ *    (SetPosition_hard)
  *
  * 2. We can jump based on the bitrate.  This is fast, but not accurate.
  *    (SetPosition_estimate)
  *
- * 3. We can seek from any position to any higher position by decoding headers.
- *    (SetPosition_hard)
+ * 3. MADLIB_rewind will rewind the stream to the beginning.  This is always accurate.
  *
- * Both 1 and 2 will leave the position behind the actual requested position;
- * combine them with 3 to catch up. Never do 3 alone in "fast" mode, since it's
- * slow if it ends up seeking from the beginning of the file.  Never do 2 in
- * "precise" mode.
+ * SetPosition_estimate will leave the position behind the actual requested position;
+ * combine them with MADLIB_rewind or SetPosition_hard to catch up. 
  */
-
-/* Returns actual position on success, 0 if past EOF, -1 on error. */
-int RageSoundReader_MP3::SetPosition_toc( int iFrame, bool Xing )
-{
-	ASSERT( !Xing || mad->has_xing );
-	ASSERT( mad->length != -1 );
-
-	/* This leaves our timer accurate if we're using our own TOC, and inaccurate
-	 * if we're using Xing. */
-	mad->timer_accurate = !Xing;
-
-	int bytepos = -1;
-	if( Xing )
-	{
-		/* We can speed up the seek using the XING tag.  First, figure
-		 * out what percentage the requested position falls in. */
-		ASSERT( SampleRate != 0 );
-		int ms = int( (iFrame * 1000LL) / SampleRate );
-		ASSERT( mad->length != 0 );
-		int percent = ms * 100 / mad->length;
-		if( percent < 100 )
-		{
-			int jump = mad->xingtag.toc[percent];
-			bytepos = mad->filesize * jump / 256;
-		}
-		else
-			bytepos = 2000000000; /* force EOF */
-
-		mad_timer_set( &mad->Timer, 0, percent * mad->length, 100000 );
-	}
-	else
-	{
-		mad_timer_t desired;
-		mad_timer_set( &desired, 0, iFrame, SampleRate );
-
-		if( mad->tocmap.empty() )
-			return 1; /* don't have any info */
-
-		/* Find the last entry <= iFrame that we actually have an entry for;
-		 * this will get us as close as possible. */
-		madlib_t::tocmap_t::iterator it = mad->tocmap.upper_bound( desired );
-		if( it == mad->tocmap.begin() )
-			return 1; /* don't have any info */
-		--it;
-
-		mad->Timer = it->first;
-		bytepos = it->second;
-	}
-
-	if( bytepos != -1 )
-	{
-		/* Seek backwards up to 4k. */
-		const int seekpos = std::max( 0, bytepos - 1024*4 );
-		seek_stream_to_byte( seekpos );
-
-		do
-		{
-			int ret = do_mad_frame_decode();
-			if( ret <= 0 )
-				return ret; /* it set the error */
-		} while( get_this_frame_byte(mad) < bytepos );
-		synth_output();
-	}
-
-	return 1;
-}
 
 int RageSoundReader_MP3::SetPosition_hard( int iFrame )
 {
@@ -960,33 +889,23 @@ int RageSoundReader_MP3::SetPosition_estimate( int iFrame )
 
 int RageSoundReader_MP3::SetPosition( int iFrame )
 {
-	if( m_bAccurateSync )
+	/* Rewinding is always fast and accurate, and SetPosition_estimate is bad at 0. */
+	if (!iFrame)
 	{
-		/* Seek using our own internal (accurate) TOC. */
-		int ret = SetPosition_toc( iFrame, false );
-		if( ret <= 0 )
-			return ret; /* it set the error */
-
-		/* Align exactly. */
-		return SetPosition_hard( iFrame );
+		MADLIB_rewind();
+		return 1; /* ok */
 	}
-	else
+
+	/* We can do a fast jump in VBR with Xing with more accuracy than without Xing. */
+	if (mad->has_xing)
 	{
-		/* Rewinding is always fast and accurate, and SetPosition_estimate is bad at 0. */
-		if( !iFrame )
-		{
-			MADLIB_rewind();
-			return 1; /* ok */
-		}
-
-		/* We can do a fast jump in VBR with Xing with more accuracy than without Xing. */
-		if( mad->has_xing )
-			return SetPosition_toc( iFrame, true );
-
-		/* Guess.  This is only remotely accurate when we're not VBR, but also
-		 * do it if we have no Xing tag. */
-		return SetPosition_estimate( iFrame );
+		return SetPosition_hard(iFrame);
 	}
+
+	LOG->Trace("MP3 decoder had to revert to guessing the song position");
+	/* Guess.  This is only remotely accurate when we're not VBR, but also
+	 * do it if we have no Xing tag. */
+	return SetPosition_estimate(iFrame);
 }
 
 bool RageSoundReader_MP3::SetProperty( const RString &sProperty, float fValue )
