@@ -849,6 +849,9 @@ int RageSoundReader_MP3::SetPosition_hard( int iFrame )
 	if( mad_timer_compare(mad->Timer, desired) == 0 )
 		return 1;
 
+	/* Mute the stream while seeking to prevent audio glitches. */
+	mad_frame_mute(&mad->Frame);
+	
 	/* We always come in here with data synthed.  Be careful not to synth the
 	 * same frame twice. */
 	bool synthed=true;
