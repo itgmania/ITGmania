@@ -25,24 +25,19 @@ Group::Group() {
     m_bHasPackIni = false;
     m_iYearReleased = 0;
     m_sBannerPath = "";
-    m_sCredits.clear();
-    m_sAuthorsNotes = "";
 }
 
 Group::~Group() {
     SONGMAN->GetGroupGroupMap().clear();
-    m_sCredits.clear();
 }
 
 Group::Group(const RString& sDir, const RString& sGroupDirName) {
     RString sPackIniPath = sDir + sGroupDirName + "/pack.ini";
-    RString credits = "";
     RString sDisplayTitle = sGroupDirName;
     RString SortTitle = sGroupDirName;
     RString TranslitTitle = "";
     RString Series = "";
     RString bannerPath = "";
-    RString authorsNotes = "";
     float fOffset = PREFSMAN->m_fMachineSyncBias;
 
     if (FILEMAN->DoesFileExist(sPackIniPath)) {
@@ -79,8 +74,6 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
             }
         }
         ini.GetValue("Group", "Year", m_iYearReleased);
-        ini.GetValue("Group", "Credits", credits);
-        ini.GetValue("Group", "AuthorsNotes", authorsNotes);
     } else {
         m_bHasPackIni = false;
         fOffset = PREFSMAN->m_fMachineSyncBias;
@@ -152,10 +145,6 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
     m_sSeries = Series;
     m_sPath = sDir + sGroupDirName;
     m_sGroupName = sGroupDirName;
-    std::vector<RString> credits_vector;
-    split(credits, ";", credits_vector);
-    m_sCredits = credits_vector;
-    m_sAuthorsNotes = authorsNotes;    
     m_fSyncOffset = fOffset;
     
 }
@@ -219,19 +208,6 @@ public:
         return 1;
     }
 
-    static int GetStepArtistCredits(T* p, lua_State *L)
-    {
-        std::vector<RString> v = p->GetStepArtistCredits();
-        LuaHelpers::CreateTableFromArray<RString>(v, L);
-        return 1;
-    }
-
-    static int GetAuthorsNotes(T* p, lua_State *L)
-    {
-        lua_pushstring(L, p->GetAuthorsNotes());
-        return 1;
-    }
-
     static int GetYearReleased(T* p, lua_State *L)
     {
         lua_pushnumber(L, p->GetYearReleased());
@@ -248,8 +224,6 @@ public:
 		ADD_METHOD(GetSyncOffset);
 		ADD_METHOD(HasPackIni);
 		ADD_METHOD(GetBannerPath);
-		ADD_METHOD(GetStepArtistCredits);
-		ADD_METHOD(GetAuthorsNotes);
         ADD_METHOD(GetYearReleased);
 	}
 

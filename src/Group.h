@@ -93,20 +93,6 @@ public:
     const RString GetBannerPath() const { return m_sBannerPath; };
 
     /**
-     * @brief The persons who worked with the group who should be credited.
-     * 
-     * @return const std::vector<RString> 
-     */
-    const std::vector<RString> GetStepArtistCredits() const { return m_sCredits; };
-
-    /**
-     * @brief Additional notes about the group.
-     * 
-     * @return const RString 
-     */
-    const RString GetAuthorsNotes() const { return m_sAuthorsNotes; };
-
-    /**
      * @brief Get the songs in the group.
 	 * @return the songs that belong in the group. */
 	const std::vector<Song*> &GetSongs() const;
@@ -147,12 +133,6 @@ public:
 
         /** @brief The path to the group's banner. */
         RString m_sBannerPath;
-
-        /** @brief The persons who worked with the group who should be credited. */
-        std::vector<RString> m_sCredits;
-
-        /** @brief Additional notes about the group. */
-        RString m_sAuthorsNotes;
 
         /** @brief The year the group was released */
         int m_iYearReleased;
