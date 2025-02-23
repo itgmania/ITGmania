@@ -209,8 +209,6 @@ public:
 	RString GetDisplayArtist() const;
 	RString GetMainTitle() const;
 
-	Group* GetGroup() const;
-
 	/**
 	 * @brief Retrieve the transliterated title, or the main title if there is no translit.
 	 * @return the proper title. */

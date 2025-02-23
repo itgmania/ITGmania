@@ -755,7 +755,7 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 					for( unsigned i=0; i< arraySongs.size(); i++ )
 					{
 						Song* pSong = arraySongs[i];
-						Group* pGroup = pSong->GetGroup();
+						Group* pGroup = SONGMAN->GetGroup(pSong);
 						if( bUseSections )
 						{
 							RString sThisSection = pGroup->GetGroupName();
@@ -812,7 +812,7 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 								sLastSection = sThisSection;
 							}
 						}
-						arrayWheelItemDatas.push_back( new MusicWheelItemData(WheelItemDataType_Song, pSong, sLastSection, nullptr, pSong->GetGroup(), SONGMAN->GetSongColor(pSong), 0) );
+						arrayWheelItemDatas.push_back( new MusicWheelItemData(WheelItemDataType_Song, pSong, sLastSection, nullptr, SONGMAN->GetGroup(pSong), SONGMAN->GetSongColor(pSong), 0) );
 					}
 					break;
 			}

@@ -277,10 +277,6 @@ const RString &Song::GetSongFilePath() const
  * <set> into Song.h, which is heavily used. */
 static std::set<RString> BlacklistedImages;
 
-Group* Song::GetGroup() const
-{
-	return SONGMAN->GetGroupFromName(m_sGroupName);
-}
 
 /* If PREFSMAN->m_bFastLoad is true, always load from cache if possible.
  * Don't read the contents of sDir if we can avoid it. That means we can't call
@@ -481,7 +477,7 @@ bool Song::ReloadFromSongDir( RString sDir )
 		return false;
 	copy.RemoveAutoGenNotes();
 	*this = copy;
-	m_SongTiming.m_fBeat0GroupOffsetInSeconds = GetGroup()->GetSyncOffset();
+	m_SongTiming.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroupFromName(m_sGroupName)->GetSyncOffset();
 
 	/* Go through the steps, first setting their Song pointer to this song
 	 * (instead of the copy used above), and constructing a map to let us
@@ -497,7 +493,7 @@ bool Song::ReloadFromSongDir( RString sDir )
 		// Reapply the Group Offset if the steps have their own timing data.
 		if( mNewSteps[id]->m_Timing.empty() )
 			continue;
-		mNewSteps[id]->m_Timing.m_fBeat0GroupOffsetInSeconds = GetGroup()->GetSyncOffset();
+		mNewSteps[id]->m_Timing.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroupFromName(m_sGroupName)->GetSyncOffset();
 	}
 
 	// Now we wipe out the new pointers, which were shallow copied and not deep copied...
@@ -2281,12 +2277,6 @@ public:
 		return 1;
 	}
 
-	static int GetGroup( T* p, lua_State *L )
-	{
-		p->GetGroup()->PushSelf(L);
-		return 1;
-	}
-
 	static int MusicLengthSeconds( T* p, lua_State *L )
 	{
 		lua_pushnumber(L, p->m_fMusicLengthSeconds);
@@ -2506,7 +2496,6 @@ public:
 		ADD_METHOD( IsEnabled );
 		ADD_METHOD(IsCustomSong);
 		ADD_METHOD( GetGroupName );
-		ADD_METHOD( GetGroup );
 		ADD_METHOD( MusicLengthSeconds );
 		ADD_METHOD( GetSampleStart );
 		ADD_METHOD( GetSampleLength );

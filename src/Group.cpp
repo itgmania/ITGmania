@@ -14,6 +14,14 @@
 #include <tuple>
 #include <vector>
 
+
+/** @brief The file that contains the group information.
+ * We name this Pack.ini over Group.ini to avoid conflict
+ * with the Waiei Group.ini-lua project still actively
+ * being developed.
+*/
+const RString INI_FILE		= "Pack.ini";
+
 Group::Group() {
     m_sDisplayTitle = "";
     m_sSortTitle = "";
@@ -32,12 +40,12 @@ Group::~Group() {
 }
 
 Group::Group(const RString& sDir, const RString& sGroupDirName) {
-    RString sPackIniPath = sDir + sGroupDirName + "/pack.ini";
+    RString sPackIniPath = sDir + sGroupDirName + "/" + INI_FILE;
     RString sDisplayTitle = sGroupDirName;
-    RString SortTitle = sGroupDirName;
-    RString TranslitTitle = "";
-    RString Series = "";
-    RString bannerPath = "";
+    RString sSortTitle = sGroupDirName;
+    RString sTranslitTitle = "";
+    RString sSeries = "";
+    RString sBannerPath = "";
     float fOffset = PREFSMAN->m_fMachineSyncBias;
 
     if (FILEMAN->DoesFileExist(sPackIniPath)) {
@@ -48,18 +56,18 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
         if (sDisplayTitle.empty()) {
             sDisplayTitle = Basename(sGroupDirName);
         }
-        ini.GetValue("Group", "Banner", bannerPath);
-        ini.GetValue("Group", "SortTitle", SortTitle);
-        Trim(SortTitle);
-        if (SortTitle.empty()) {
-            SortTitle = sDisplayTitle;
+        ini.GetValue("Group", "Banner", sBannerPath);
+        ini.GetValue("Group", "SortTitle", sSortTitle);
+        Trim(sSortTitle);
+        if (sSortTitle.empty()) {
+            sSortTitle = sDisplayTitle;
         }
-        ini.GetValue("Group", "TranslitTitle", TranslitTitle);
-        Trim(TranslitTitle);
-        if (TranslitTitle.empty()) {
-            TranslitTitle = sDisplayTitle;
+        ini.GetValue("Group", "TranslitTitle", sTranslitTitle);
+        Trim(sTranslitTitle);
+        if (sTranslitTitle.empty()) {
+            sTranslitTitle = sDisplayTitle;
         }
-        ini.GetValue("Group", "Series", Series);
+        ini.GetValue("Group", "Series", sSeries);
         RString sValue = "";
         
         ini.GetValue("Group", "SyncOffset", sValue);
@@ -68,7 +76,7 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
             if (sValue.CompareNoCase("null") == 0) {
                 fOffset = 0.0f;
             } else if (sValue.CompareNoCase("itg") == 0) {
-                fOffset = 0.009f;
+                fOffset = -0.009f;
             } else {
                 fOffset = StringToFloat(sValue);
             }
@@ -84,9 +92,9 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
 	std::vector<RString> arrayGroupBanners;
 	
 	// First check if there is a banner provided in pack.ini
-	if(!bannerPath.empty())
+	if(!sBannerPath.empty())
 	{
-		GetDirListing(sDir + sGroupDirName + "/" + bannerPath, arrayGroupBanners);
+		GetDirListing(sDir + sGroupDirName + "/" + sBannerPath, arrayGroupBanners);
 	}
 	GetDirListing(sDir + sGroupDirName + "/*.png", arrayGroupBanners);
 	GetDirListing(sDir + sGroupDirName + "/*.jpg", arrayGroupBanners);
@@ -140,9 +148,9 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
     */
 
     m_sDisplayTitle = sDisplayTitle;
-    m_sSortTitle = SortTitle;
-    m_sTranslitTitle = TranslitTitle;
-    m_sSeries = Series;
+    m_sSortTitle = sSortTitle;
+    m_sTranslitTitle = sTranslitTitle;
+    m_sSeries = sSeries;
     m_sPath = sDir + sGroupDirName;
     m_sGroupName = sGroupDirName;
     m_fSyncOffset = fOffset;

@@ -595,6 +595,7 @@ RString SongManager::GetSongGroupBackgroundPath( RString sSongGroup ) const
 	return RString();
 }
 */
+
 void SongManager::GetSongGroupNames( std::vector<RString> &AddTo ) const
 {
 	AddTo.insert(AddTo.end(), m_sSongGroupNames.begin(), m_sSongGroupNames.end() );
@@ -849,6 +850,11 @@ std::vector<Song*> SongManager::GetPreferredSortSongsBySectionName( const RStrin
 	std::vector<Song*> AddTo;
 	GetPreferredSortSongsBySectionName(sSectionName, AddTo);
 	return AddTo;
+}
+
+Group* SongManager::GetGroup( const Song* pSong ) const
+{
+	return GetGroupFromName( pSong->m_sGroupName );
 }
 
 Group* SongManager::GetGroupFromName( const RString& sGroupName ) const
@@ -2236,6 +2242,17 @@ public:
 		return 1;
 	}
 
+	static int GetGroup( T* p, lua_State *L )
+	{
+		Song *pSong = Luna<Song>::check(L,1);
+		Group *pGroup = p->GetGroup(pSong);
+		if( pGroup != nullptr )
+			pGroup->PushSelf(L);
+		else
+			lua_pushnil(L);
+		return 1;
+	}
+
 	static int GetSongsInGroup( T* p, lua_State *L )
 	{
 		std::vector<Song*> v = p->GetSongs(SArg(1));
@@ -2321,6 +2338,7 @@ public:
 		ADD_METHOD( GetCourseColor );
 		ADD_METHOD( GetSongRank );
 		ADD_METHOD( GetSongGroupNames );
+		ADD_METHOD( GetGroup );
 		ADD_METHOD( GetSongsInGroup );
 		ADD_METHOD( GetCoursesInGroup );
 		ADD_METHOD( ShortenGroupName );
