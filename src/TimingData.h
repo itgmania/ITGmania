@@ -460,7 +460,7 @@ public:
 	/** @brief The initial offset of a song. */
 	float	m_fBeat0OffsetInSeconds;
 
-	/** @brief The offset applied to the song's entire group */
+	/** @brief The sync bias offset of this group */
 	float	m_fBeat0GroupOffsetInSeconds;
 
 	// XXX: this breaks encapsulation. get rid of it ASAP
