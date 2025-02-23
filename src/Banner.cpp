@@ -25,6 +25,7 @@ Banner::Banner()
 {
 	m_bScrolling = false;
 	m_fPercentScrolling = 0;
+	Actor::DisableTabTildeScaling();
 }
 
 // Ugly: if sIsBanner is false, we're actually loading something other than a banner.

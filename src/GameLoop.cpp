@@ -40,6 +40,10 @@ void GameLoop::SetUpdateRate( float fUpdateRate )
 	g_fUpdateRate = fUpdateRate;
 }
 
+float GameLoop::GetUpdateRate() {
+	return g_fUpdateRate;
+}
+
 static void CheckGameLoopTimerSkips( float fDeltaTime )
 {
 	static int iLastFPS = 0;
