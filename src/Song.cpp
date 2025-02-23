@@ -477,7 +477,7 @@ bool Song::ReloadFromSongDir( RString sDir )
 		return false;
 	copy.RemoveAutoGenNotes();
 	*this = copy;
-	m_SongTiming.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroupFromName(m_sGroupName)->GetSyncOffset();
+	m_SongTiming.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroup(this)->GetSyncOffset();
 
 	/* Go through the steps, first setting their Song pointer to this song
 	 * (instead of the copy used above), and constructing a map to let us
@@ -493,7 +493,7 @@ bool Song::ReloadFromSongDir( RString sDir )
 		// Reapply the Group Offset if the steps have their own timing data.
 		if( mNewSteps[id]->m_Timing.empty() )
 			continue;
-		mNewSteps[id]->m_Timing.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroupFromName(m_sGroupName)->GetSyncOffset();
+		mNewSteps[id]->m_Timing.m_fBeat0GroupOffsetInSeconds = SONGMAN->GetGroup(this)->GetSyncOffset();
 	}
 
 	// Now we wipe out the new pointers, which were shallow copied and not deep copied...
