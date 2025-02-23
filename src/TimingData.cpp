@@ -18,40 +18,75 @@ static const int INVALID_INDEX = -1;
 
 TimingSegment* GetSegmentAtRow( int iNoteRow, TimingSegmentType tst );
 
-TimingData::TimingData(float fOffset) : m_fBeat0OffsetInSeconds(fOffset)
-{
+void TimingData::Copy(const TimingData &other) {
+    /* de-allocate any old pointers we had */
+    ClearTimingSegments();
+
+    m_fBeat0OffsetInSeconds = other.m_fBeat0OffsetInSeconds;
+    m_SyncBias = other.m_SyncBias;
+    m_sFile = other.m_sFile;
+
+    FOREACH_TimingSegmentType( tst )
+    {
+        const std::vector<TimingSegment*> &vpSegs = other.m_avpTimingSegments[tst];
+
+        for( unsigned i = 0; i < vpSegs.size(); ++i )
+            AddSegment( vpSegs[i] );
+    }
 }
 
-void TimingData::Copy( const TimingData& cpy )
+void TimingData::ClearTimingSegments()
 {
-	/* de-allocate any old pointers we had */
-	Clear();
+    /* Delete all pointers owned by this TimingData. */
+    FOREACH_TimingSegmentType( tst )
+    {
+        std::vector<TimingSegment*> &vSegs = m_avpTimingSegments[tst];
+        for( unsigned i = 0; i < vSegs.size(); ++i )
+        {
+            RageUtil::SafeDelete( vSegs[i] );
+        }
 
-	m_fBeat0OffsetInSeconds = cpy.m_fBeat0OffsetInSeconds;
-	m_sFile = cpy.m_sFile;
-
-	FOREACH_TimingSegmentType( tst )
-	{
-		const std::vector<TimingSegment*> &vpSegs = cpy.m_avpTimingSegments[tst];
-
-		for( unsigned i = 0; i < vpSegs.size(); ++i )
-			AddSegment( vpSegs[i] );
-	}
+        vSegs.clear();
+    }
 }
 
-void TimingData::Clear()
-{
-	/* Delete all pointers owned by this TimingData. */
-	FOREACH_TimingSegmentType( tst )
-	{
-		std::vector<TimingSegment*> &vSegs = m_avpTimingSegments[tst];
-		for( unsigned i = 0; i < vSegs.size(); ++i )
-		{
-			RageUtil::SafeDelete( vSegs[i] );
-		}
+float TimingData::GetOffset() const {
+    float result = m_fBeat0OffsetInSeconds;
 
-		vSegs.clear();
-	}
+    // don't touch offset if machine's syncbias is unknown
+    if (PREFSMAN->m_SyncBias == SYNC_BIAS_NA || PREFSMAN->m_SyncBias == SyncBias_Invalid)
+        return result;
+
+    switch (m_SyncBias) {
+    case SYNC_BIAS_ITG:
+        // An author has added 9ms to a song offset and we compensate it back:
+        result -= TIME_SYNC_BIAS_ITG;
+        break;
+    case SYNC_BIAS_NULL: // - 0.0f
+    case SYNC_BIAS_NA: // unknown, don't touch
+    default:
+        break;
+    }
+
+    return result;
+}
+
+void TimingData::SetOffset(float fOffset) {
+    m_fBeat0OffsetInSeconds = fOffset;
+
+    // don't touch offset if machine's sync is unknown
+    if (PREFSMAN->m_SyncBias == SYNC_BIAS_NA || PREFSMAN->m_SyncBias == SyncBias_Invalid)
+        return;
+
+    switch (m_SyncBias) {
+    case SYNC_BIAS_ITG:
+        m_fBeat0OffsetInSeconds += TIME_SYNC_BIAS_ITG;
+        break;
+    case SYNC_BIAS_NULL: // +0.0f
+    case SYNC_BIAS_NA: // unknown, don't touch
+    default:
+        break;
+    }
 }
 
 bool TimingData::IsSafeFullTiming()
@@ -77,11 +112,6 @@ bool TimingData::IsSafeFullTiming()
 	return true;
 }
 
-TimingData::~TimingData()
-{
-	Clear();
-}
-
 void TimingData::PrepareLookup()
 {
 	// If multiple players have the same timing data, then adding to the
@@ -102,14 +132,16 @@ void TimingData::PrepareLookup()
 			curr_segment < total_segments; curr_segment+= segments_per_lookup)
 	{
 		GetBeatStarts beat_start;
-		beat_start.last_time= -m_fBeat0OffsetInSeconds;
+		// beat_start.last_time= -m_fBeat0OffsetInSeconds;
+		beat_start.last_time= -GetOffset();
 		GetBeatArgs args;
 		args.elapsed_time= FLT_MAX;
 		GetBeatInternal(beat_start, args, curr_segment);
 		m_beat_start_lookup.push_back(lookup_item_t(args.elapsed_time, beat_start));
 
 		GetBeatStarts time_start;
-		time_start.last_time= -m_fBeat0OffsetInSeconds;
+		// time_start.last_time= -m_fBeat0OffsetInSeconds;
+		time_start.last_time= -GetOffset();
 		m_time_start_lookup.push_back(lookup_item_t(NoteRowToBeat(time_start.last_row), time_start));
 	}
 	// If there are less than two entries, then FindEntryInLookup in lookup
@@ -753,10 +785,45 @@ bool TimingData::DoesLabelExist( const RString& sLabel ) const
 	return false;
 }
 
-void TimingData::GetBeatAndBPSFromElapsedTime(GetBeatArgs& args) const
-{
-	args.elapsed_time += GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate * PREFSMAN->m_fGlobalOffsetSeconds;
-	GetBeatAndBPSFromElapsedTimeNoOffset(args);
+void TimingData::GetBeatAndBPSFromElapsedTime(GetBeatArgs &args) const {
+    // don't touch machine offset if song's sync is unknown
+    if (m_SyncBias == SYNC_BIAS_NA || m_SyncBias == SyncBias_Invalid) {
+        // This is actually bad, globaloffset must not be adjusted by rate
+        args.elapsed_time +=
+            GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate *
+            PREFSMAN->m_fGlobalOffsetSeconds;
+        /*
+          for itg: offset<real_offset - bias_9ms> + global<lag + itg_sync_9ms>
+          for rate: multipled globaloffset -> multiplied hardware lag
+         */
+        GetBeatAndBPSFromElapsedTimeNoOffset(args);
+        return;
+    }
+
+    switch (PREFSMAN->m_SyncBias) {
+    case SYNC_BIAS_ITG:
+        // Machine is synced to itg
+        // means it has extra -9ms we should compensate
+        // and the real offset have nothing with rate music
+        args.elapsed_time +=
+            (PREFSMAN->m_fGlobalOffsetSeconds + TIME_SYNC_BIAS_ITG);
+        break;
+    case SYNC_BIAS_NULL:
+        // Machine is synced to null
+        // means global offset is real global hardware offset
+        // and the real offset have nothing with rate music
+        args.elapsed_time += PREFSMAN->m_fGlobalOffsetSeconds;
+        break;
+    case SYNC_BIAS_NA:
+    default:
+        // don't touch machine offset if song's sync is unknown
+        args.elapsed_time +=
+            GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate *
+            PREFSMAN->m_fGlobalOffsetSeconds;
+        break;
+    }
+
+    GetBeatAndBPSFromElapsedTimeNoOffset(args);
 }
 
 enum
@@ -916,7 +983,10 @@ void TimingData::GetBeatInternal(GetBeatStarts& start, GetBeatArgs& args,
 void TimingData::GetBeatAndBPSFromElapsedTimeNoOffset(GetBeatArgs& args) const
 {
 	GetBeatStarts start;
-	start.last_time= -m_fBeat0OffsetInSeconds;
+
+	// start.last_time= -m_fBeat0OffsetInSeconds;
+	start.last_time= -GetOffset();
+
 	beat_start_lookup_t::const_iterator looked_up_start=
 		FindEntryInLookup(m_beat_start_lookup, args.elapsed_time);
 	if(looked_up_start != m_beat_start_lookup.end())
@@ -992,16 +1062,46 @@ float TimingData::GetElapsedTimeInternal(GetBeatStarts& start, float beat,
 	return start.last_time;
 }
 
-float TimingData::GetElapsedTimeFromBeat( float fBeat ) const
-{
-	return TimingData::GetElapsedTimeFromBeatNoOffset( fBeat )
-		- GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate * PREFSMAN->m_fGlobalOffsetSeconds;
+float TimingData::GetElapsedTimeFromBeat(float fBeat) const {
+    // no offset? no global offset?
+    float result = TimingData::GetElapsedTimeFromBeatNoOffset(fBeat);
+
+    // don't touch machine offset if song's sync is unknown
+    if (m_SyncBias == SYNC_BIAS_NA || m_SyncBias == SyncBias_Invalid) {
+        result -= GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate *
+                  PREFSMAN->m_fGlobalOffsetSeconds;
+        return result;
+    }
+
+    switch (PREFSMAN->m_SyncBias) {
+    case SYNC_BIAS_ITG:
+        // Machine is synced to itg
+        // means it has extra -9ms we should compensate
+        // and the real offset have nothing with rate music
+        result -= (PREFSMAN->m_fGlobalOffsetSeconds + TIME_SYNC_BIAS_ITG);
+        break;
+    case SYNC_BIAS_NULL:
+        // Machine is synced to null
+        // means global offset is real global hardware offset
+        // and the real offset have nothing with rate music
+        result -= PREFSMAN->m_fGlobalOffsetSeconds;
+        break;
+    case SYNC_BIAS_NA:
+    default:
+        result -= GAMESTATE->m_SongOptions.GetCurrent().m_fMusicRate *
+                  PREFSMAN->m_fGlobalOffsetSeconds;
+        break;
+    }
+
+    return result;
 }
 
 float TimingData::GetElapsedTimeFromBeatNoOffset( float fBeat ) const
 {
 	GetBeatStarts start;
-	start.last_time= -m_fBeat0OffsetInSeconds;
+	// start.last_time= -m_fBeat0OffsetInSeconds;
+	start.last_time= -GetOffset();
+
 	beat_start_lookup_t::const_iterator looked_up_start=
 		FindEntryInLookup(m_time_start_lookup, fBeat);
 	if(looked_up_start != m_time_start_lookup.end())

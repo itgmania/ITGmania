@@ -61,18 +61,21 @@ TimingSegmentToX( Fake, FAKE );
 class TimingData
 {
 public:
-	/**
-	 * @brief Sets up initial timing data with a defined offset.
-	 * @param fOffset the offset from the 0th beat. */
-	TimingData( float fOffset = 0 );
-	~TimingData();
+    TimingData() : m_SyncBias(SYNC_BIAS_NA), m_fBeat0OffsetInSeconds(0.0f){};
+    ~TimingData() { ClearTimingSegments(); };
 
 	void Copy( const TimingData &other );
-	void Clear();
-	bool IsSafeFullTiming();
+	void ClearTimingSegments();
+    /**
+     * @brief Return true if all timing segments are not empty
+     *
+     * used in screen edit to check if timing clipboard is safe to use
+     */
+    bool IsSafeFullTiming();
 
-	TimingData( const TimingData &cpy ) { Copy(cpy); }
-	TimingData& operator=( const TimingData &cpy ) { Copy(cpy); return *this; }
+    TimingData( const TimingData &other ) { Copy(other); }
+    TimingData& operator=( const TimingData &other ) { Copy(other); return *this; }
+
 
 	// GetBeatArgs, GetBeatStarts, m_beat_start_lookup, m_time_start_lookup,
 	// PrepareLookup, and ReleaseLookup form a system for speeding up finding
@@ -121,7 +124,7 @@ public:
 	{
 		float first;
 		GetBeatStarts second;
-	lookup_item_t(float f, GetBeatStarts& s) :first(f), second(s) {}
+		lookup_item_t(float f, GetBeatStarts& s) :first(f), second(s) {}
 	};
 	typedef std::vector<lookup_item_t> beat_start_lookup_t;
 	beat_start_lookup_t m_beat_start_lookup;
@@ -353,10 +356,8 @@ public:
 
 	void NoteRowToMeasureAndBeat( int iNoteRow, int &iMeasureIndexOut, int &iBeatIndexOut, int &iRowsRemainder ) const;
 
-	void GetBeatInternal(GetBeatStarts& start, GetBeatArgs& args,
-		unsigned int max_segment) const;
-	float GetElapsedTimeInternal(GetBeatStarts& start, float beat,
-		unsigned int max_segment) const;
+	void GetBeatInternal(GetBeatStarts& start, GetBeatArgs& args, unsigned int max_segment) const;
+	float GetElapsedTimeInternal(GetBeatStarts& start, float beat, unsigned int max_segment) const;
 	void GetBeatAndBPSFromElapsedTime(GetBeatArgs& args) const;
 	float GetBeatFromElapsedTime(float elapsed_time) const	// shortcut for places that care only about the beat
 	{
@@ -367,6 +368,9 @@ public:
 	}
 	float GetElapsedTimeFromBeat( float fBeat ) const;
 
+	/**
+	 * @brief Gets beat and BPS from elapsed time without global offset applied
+	 */
 	void GetBeatAndBPSFromElapsedTimeNoOffset(GetBeatArgs& args) const;
 	float GetBeatFromElapsedTimeNoOffset(float elapsed_time) const	// shortcut for places that care only about the beat
 	{
@@ -394,6 +398,12 @@ public:
 	 */
 	bool operator==( const TimingData &other ) const
 	{
+		if ( this->m_fBeat0OffsetInSeconds != other.m_fBeat0OffsetInSeconds )
+			return false;
+
+		if ( this->m_SyncBias != other.m_SyncBias )
+			return false;
+
 		FOREACH_ENUM( TimingSegmentType, tst )
 		{
 			const std::vector<TimingSegment*> &us = m_avpTimingSegments[tst];
@@ -415,7 +425,7 @@ public:
 			}
 		}
 
-		return this->m_fBeat0OffsetInSeconds == other.m_fBeat0OffsetInSeconds;
+		return true;
 	}
 
 	/**
@@ -455,13 +465,62 @@ public:
 	 *
 	 * This is for informational purposes only.
 	 */
-	std::string					m_sFile;
-
-	/** @brief The initial offset of a song. */
-	float	m_fBeat0OffsetInSeconds;
+	std::string m_sFile;
 
 	// XXX: this breaks encapsulation. get rid of it ASAP
 	std::vector<RString> ToVectorString(TimingSegmentType tst, int dec = 6) const;
+
+    /**
+     * @brief Sync Bias declared for the song.
+     *
+     * N/A - unspecified
+     * Null - no offset
+     * ITG - 9ms was added to offset
+     */
+    SyncBias m_SyncBias;
+
+    /**
+     * @brief The initial offset of the first beat in the song
+     *
+     * Negative offset means <NO INFO>
+     * Positive offset means <NO INFO>
+     */
+    float m_fBeat0OffsetInSeconds; // rename temporary to cut all usages
+
+    /**
+     * @brief Retrieves the offset of the song's first beat in seconds.
+     *
+     * This method returns the song's beat offset, potentially adjusted by the
+     * song's sync bias. Sync bias is used to compensate for a common +9ms
+     * offset.
+     *
+     * For example, if SyncBias is ITG, this will be
+     * the file-specified offset minus 0.009 seconds.
+     *
+     * If machine's sync paradigm is unknown we can't calculate proper offset
+     * and just leave it untouched
+     *
+     * @return The offset in seconds for the song's first beat
+     */
+    float GetOffset() const;
+
+    /**
+     * @brief Sets the offset for the song's first beat in seconds.
+     *
+     * This method applies an offset to the song's first beat, with an optional
+     * SyncBias adjustment. SyncBias compensates for a common +9ms offset on
+     * older ITG arcade machines.
+     *
+     * If SyncBias is ITG, 0.009 seconds is added to the provided offset value
+     * before it is stored.
+     *
+     * If machine's sync paradigm is unknown we can't calculate proper offset
+     * and just set it as is.
+     *
+     * @param fOffset The offset in seconds for the song's first beat (unbiased).
+     */
+    void SetOffset( float fOffset );
+
 protected:
 	// don't call this directly; use the derived-type overloads.
 	void AddSegment( const TimingSegment *seg );
@@ -475,6 +534,7 @@ protected:
 /**
  * @file
  * @author Chris Danford, Glenn Maynard (c) 2001-2004
+ * @author Sirex, 2024
  * @section LICENSE
  * All rights reserved.
  *

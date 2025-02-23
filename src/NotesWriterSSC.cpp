@@ -246,6 +246,7 @@ static void WriteGlobalTags( RageFile &f, const Song &out )
 		}
 	}
 	f.PutLine( ssprintf( "#OFFSET:%.6f;", out.m_SongTiming.m_fBeat0OffsetInSeconds ) );
+	f.PutLine( ssprintf( "#SYNCBIAS:%s;", SyncBiasToString(out.m_SongTiming.m_SyncBias).c_str() ) );
 	f.PutLine( ssprintf( "#SAMPLESTART:%.6f;", out.m_fMusicSampleStartSeconds ) );
 	f.PutLine( ssprintf( "#SAMPLELENGTH:%.6f;", out.m_fMusicSampleLengthSeconds ) );
 
@@ -398,6 +399,7 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 	if( !in.m_Timing.empty() )
 	{
 		lines.push_back( ssprintf( "#OFFSET:%.6f;", in.m_Timing.m_fBeat0OffsetInSeconds ) );
+		lines.push_back( ssprintf( "#SYNCBIAS:%s;", SyncBiasToString(in.m_Timing.m_SyncBias).c_str() ) );
 		GetTimingTags( lines, in.m_Timing );
 	}
 

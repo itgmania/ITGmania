@@ -215,7 +215,7 @@ static void StartMusic( MusicToPlay &ToPlay )
 		float fDestBeat = fmodfp( GAMESTATE->m_Position.m_fSongBeatNoOffset, 1 );
 		float fTime = NewMusic->m_NewTiming.GetElapsedTimeFromBeatNoOffset( fDestBeat );
 
-		NewMusic->m_NewTiming.m_fBeat0OffsetInSeconds = fTime;
+		NewMusic->m_NewTiming.SetOffset( fTime );
 
 		StartImmediately = true;
 	}
@@ -949,4 +949,3 @@ LUAFUNC_REGISTER_COMMON(get_sound_driver_list);
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-
