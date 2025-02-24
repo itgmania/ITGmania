@@ -700,7 +700,11 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 				return RString();
 		}
 	case SORT_POPULARITY:
+	case SORT_POPULARITY_P1:
+	case SORT_POPULARITY_P2:
 	case SORT_RECENT:
+	case SORT_RECENT_P1:
+	case SORT_RECENT_P2:
 		return RString();
 	case SORT_TOP_GRADES_P1:
 			{
@@ -828,6 +832,19 @@ void SongUtil::SortByMostRecentlyPlayedForMachine( std::vector<Song*> &vpSongsIn
 		g_mapSongSortVal[s] = val;
 	}
 
+	stable_sort( vpSongsInOut.begin(), vpSongsInOut.end(), CompareSongPointersBySortValueDescending );
+	g_mapSongSortVal.clear();
+}
+
+void SongUtil::SortByMostRecentlyPlayedForProfile( std::vector<Song*> &vpSongsInOut, PlayerNumber pn )
+{
+	Profile *pProfile = PROFILEMAN->GetProfile(pn);
+	for (Song const *s : vpSongsInOut)
+	{
+		int iNumTimesPlayed = pProfile->GetSongNumTimesPlayed( s );
+		RString val = iNumTimesPlayed ? pProfile->GetSongLastPlayedDateTime(s).GetString() : RString("0");
+		g_mapSongSortVal[s] = val;
+	}
 	stable_sort( vpSongsInOut.begin(), vpSongsInOut.end(), CompareSongPointersBySortValueDescending );
 	g_mapSongSortVal.clear();
 }

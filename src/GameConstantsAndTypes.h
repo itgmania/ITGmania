@@ -167,6 +167,8 @@ enum SortOrder
 	SORT_TITLE, /**< Sort by the Song's title. */
 	SORT_BPM, /**< Sort by the Song's BPM. */
 	SORT_POPULARITY, /**< Sort by how popular the Song is. */
+	SORT_POPULARITY_P1, /**< Sort by how popular the Song is for P1. */
+	SORT_POPULARITY_P2, /**< Sort by how popular the Song is for P2. */
 	SORT_TOP_GRADES, /**< Sort by the highest grades earned on a Song. */
 	SORT_TOP_GRADES_P1, /**< Sort by the highest grades earned on a Song for P1. */
 	SORT_TOP_GRADES_P2, /**< Sort by the highest grades earned on a Song for P2. */
@@ -192,6 +194,8 @@ enum SortOrder
 	SORT_LENGTH, /**< Sort the songs/courses by how long they would last. */
 	SORT_ROULETTE,
 	SORT_RECENT,
+	SORT_RECENT_P1, /**< Sort by the most recent play for P1. */
+	SORT_RECENT_P2, /**< Sort by the most recent play for P2. */
 	NUM_SortOrder,
 	SortOrder_Invalid
 };
