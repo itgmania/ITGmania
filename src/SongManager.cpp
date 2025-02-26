@@ -586,7 +586,7 @@ RString SongManager::GetSongGroupBannerPath( RString sSongGroup ) const
 	Group* group = GetGroupFromName(sSongGroup);
 	if(group == nullptr)
 	{
-		ASSERT_M( 0, ssprintf("requested banner for song group '%s' that doesn't exist",sSongGroup.c_str()) );
+		LOG->Warn("Requested banner for song group '%s' that doesn't exist", sSongGroup.c_str());
 		return RString();
 	}
 	return group->GetBannerPath();
