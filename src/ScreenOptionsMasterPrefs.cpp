@@ -712,8 +712,8 @@ static void GlobalOffsetSeconds( int &sel, bool ToSel, const ConfOption *pConfOp
 
 static void MachineSyncBias( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	const float mapping[] = { 0.0f, 0.009f };
-	MoveMap( sel, pConfOption, ToSel, mapping, ARRAYLEN(mapping) );
+	constexpr std::array<float, 2> mapping = { 0.0f, 0.009f };
+	MoveMap( sel, pConfOption, ToSel, mapping.data(), mapping.size() );
 }
 
 static void EditRecordModeLeadIn(int &sel, bool to_sel, const ConfOption* conf_option)
