@@ -224,14 +224,27 @@ void Banner::LoadRandom()
 void Banner::LoadFromSortOrder( SortOrder so )
 {
 	// TODO: See if the check for nullptr/PREFERRED(?) is needed.
-	if( so == SortOrder_Invalid )
+	switch( so )
 	{
-		LoadFallback();
-	}
-	else
-	{
-		if( so != SORT_GROUP && so != SORT_RECENT && so != SORT_RECENT_P1 && so != SORT_RECENT_P2 )
+		case SortOrder_Invalid:		
+			LoadFallback(); 
+			break;
+		case SORT_GROUP:
+			break;
+		// This is necessary to prevent multiple banners from matching for SORT_RECENT and SORT_POPULARITY
+		case SORT_RECENT:
+		case SORT_RECENT_P1:
+		case SORT_RECENT_P2:
+			Load( THEME->GetPathG("Banner",ssprintf("%s",SortOrderToString(SORT_RECENT).c_str())) );
+			break;
+		case SORT_POPULARITY:
+		case SORT_POPULARITY_P1:
+		case SORT_POPULARITY_P2:
+			Load( THEME->GetPathG("Banner",ssprintf("%s",SortOrderToString(SORT_POPULARITY).c_str())) );
+			break;
+		default: 			
 			Load( THEME->GetPathG("Banner",ssprintf("%s",SortOrderToString(so).c_str())) );
+			break;
 	}
 	m_bScrolling = (bool)SCROLL_SORT_ORDER;
 }

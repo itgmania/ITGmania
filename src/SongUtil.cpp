@@ -634,9 +634,6 @@ void SongUtil::SortSongPointerArrayByNumPlays( std::vector<Song*> &vpSongsInOut,
 	g_mapSongSortVal.clear();
 }
 
-static LocalizedString SECTION_RECENTLY_PLAYED("SongSort", "Recently Played");
-static LocalizedString SECTION_POPULAR_SONGS("SongSort", "Most Played");
-
 RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so )
 {
 	if( pSong == nullptr )
@@ -705,11 +702,10 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 	case SORT_POPULARITY:
 	case SORT_POPULARITY_P1:
 	case SORT_POPULARITY_P2:
-		return SECTION_POPULAR_SONGS.GetValue();
 	case SORT_RECENT:
 	case SORT_RECENT_P1:
 	case SORT_RECENT_P2:
-		return SECTION_RECENTLY_PLAYED.GetValue();
+		return THEME->GetString("MusicWheel", ssprintf("%s%s", SortOrderToString(so).c_str(), "Text"));
 	case SORT_TOP_GRADES_P1:
 			{
 			int iCounts[NUM_Grade];

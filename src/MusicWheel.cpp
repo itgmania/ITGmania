@@ -625,7 +625,7 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 				case SORT_POPULARITY:
 					if( (int) arraySongs.size() > MOST_PLAYED_SONGS_TO_SHOW )
 						arraySongs.erase( arraySongs.begin()+MOST_PLAYED_SONGS_TO_SHOW, arraySongs.end() );
-					bUseSections = false;
+					bUseSections = true;
 					break;
 				case SORT_POPULARITY_P1:
 					if( PROFILEMAN->IsPersistentProfile(PLAYER_1) )
@@ -666,7 +666,7 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 					SongUtil::SortByMostRecentlyPlayedForMachine( arraySongs );
 					if( (int) arraySongs.size() > RECENT_SONGS_TO_SHOW )
 						arraySongs.erase( arraySongs.begin()+RECENT_SONGS_TO_SHOW, arraySongs.end() );
-					bUseSections = false;
+					bUseSections = true;
 					break;
 				case SORT_RECENT_P1:
 					if( PROFILEMAN->IsPersistentProfile(PLAYER_1) )
