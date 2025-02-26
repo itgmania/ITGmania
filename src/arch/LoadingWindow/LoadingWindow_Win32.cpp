@@ -27,7 +27,7 @@ static HBITMAP g_hBitmap = nullptr;
 /* Load a RageSurface into a GDI surface. */
 static HBITMAP LoadWin32Surface( const RageSurface *pSplash, HWND hWnd )
 {
-	RageSurface *s = CreateSurface( pSplash->w, pSplash->h, 24,
+	RageSurface *s = CreateSurface( pSplash->w, pSplash->h, 32,
 		0x00FF0000, 0x0000FF00, 0x000000FF, 0 );
 	RageSurfaceUtils::Blit( pSplash, s, -1, -1 );
 
