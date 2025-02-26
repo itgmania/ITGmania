@@ -281,7 +281,10 @@ void SongManager::AddGroup( RString sDir, RString sGroupDirName, Group* group )
 
 	m_sSongGroupNames.push_back( sGroupDirName );
 	// add to the group list
-	m_pGroups.push_back( group );
+	if( group )
+	{
+		m_pGroups.push_back( group );
+	}
 	
 	if (m_mapGroupsByName.find(sGroupDirName) == m_mapGroupsByName.end())
 	{
