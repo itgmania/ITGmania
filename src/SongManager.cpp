@@ -22,6 +22,7 @@
 #include "Profile.h"
 #include "ProfileManager.h"
 #include "RageFile.h"
+#include "RageUtil.h"
 #include "RageFileManager.h"
 #include "RageLog.h"
 #include "Song.h"
@@ -37,6 +38,7 @@
 #include "TrailUtil.h"
 #include "UnlockManager.h"
 #include "SpecialFiles.h"
+#include "Group.h"
 
 #include <cstddef>
 #include <tuple>
@@ -267,7 +269,7 @@ void SongManager::SanityCheckGroupDir( RString sDir ) const
 	}
 }
 
-void SongManager::AddGroup( RString sDir, RString sGroupDirName )
+void SongManager::AddGroup( RString sDir, RString sGroupDirName, Group* group )
 {
 	unsigned j;
 	for(j = 0; j < m_sSongGroupNames.size(); ++j)
@@ -277,64 +279,25 @@ void SongManager::AddGroup( RString sDir, RString sGroupDirName )
 	if( j != m_sSongGroupNames.size() )
 		return; // the group is already added
 
-	// Look for a group banner in this group folder
-	std::vector<RString> arrayGroupBanners;
-	GetDirListing( sDir+sGroupDirName+"/*.png", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.jpg", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.jpeg", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.gif", arrayGroupBanners );
-	GetDirListing( sDir+sGroupDirName+"/*.bmp", arrayGroupBanners );
-
-	RString sBannerPath;
-	if( !arrayGroupBanners.empty() )
-		sBannerPath = sDir+sGroupDirName+"/"+arrayGroupBanners[0] ;
-	else
-	{
-		// Look for a group banner in the parent folder
-		GetDirListing( sDir+sGroupDirName+".png", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".jpg", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".jpeg", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".gif", arrayGroupBanners );
-		GetDirListing( sDir+sGroupDirName+".bmp", arrayGroupBanners );
-		if( !arrayGroupBanners.empty() )
-			sBannerPath = sDir+arrayGroupBanners[0];
-	}
-
-	/* Other group graphics are a bit trickier, and usually don't exist.
-	 * A themer has a few options, namely checking the aspect ratio and
-	 * operating on it. -aj
-	 * TODO: Once the files are implemented in Song, bring the extensions
-	 * from there into here. -aj */
-	// Group background
-
-	//vector<RString> arrayGroupBackgrounds;
-	//GetDirListing( sDir+sGroupDirName+"/*-bg.png", arrayGroupBanners );
-	//GetDirListing( sDir+sGroupDirName+"/*-bg.jpg", arrayGroupBanners );
-	//GetDirListing( sDir+sGroupDirName+"/*-bg.jpeg", arrayGroupBanners );
-	//GetDirListing( sDir+sGroupDirName+"/*-bg.gif", arrayGroupBanners );
-	//GetDirListing( sDir+sGroupDirName+"/*-bg.bmp", arrayGroupBanners );
-/*
-	RString sBackgroundPath;
-	if( !arrayGroupBackgrounds.empty() )
-		sBackgroundPath = sDir+sGroupDirName+"/"+arrayGroupBackgrounds[0];
-	else
-	{
-		// Look for a group background in the parent folder
-		GetDirListing( sDir+sGroupDirName+"-bg.png", arrayGroupBackgrounds );
-		GetDirListing( sDir+sGroupDirName+"-bg.jpg", arrayGroupBackgrounds );
-		GetDirListing( sDir+sGroupDirName+"-bg.jpeg", arrayGroupBackgrounds );
-		GetDirListing( sDir+sGroupDirName+"-bg.gif", arrayGroupBackgrounds );
-		GetDirListing( sDir+sGroupDirName+"-bg.bmp", arrayGroupBackgrounds );
-		if( !arrayGroupBackgrounds.empty() )
-			sBackgroundPath = sDir+arrayGroupBackgrounds[0];
-	}
-*/
-	/*
-	LOG->Trace( "Group banner for '%s' is '%s'.", sGroupDirName.c_str(),
-				sBannerPath != ""? sBannerPath.c_str():"(none)" );
-	*/
 	m_sSongGroupNames.push_back( sGroupDirName );
-	m_sSongGroupBannerPaths.push_back( sBannerPath );
+	// add to the group list
+	if( group )
+	{
+		m_pGroups.push_back( group );
+	}
+	
+	if (m_mapGroupsByName.find(sGroupDirName) == m_mapGroupsByName.end())
+	{
+		m_mapGroupsByName[sGroupDirName] = group;
+	} 
+
+	// Add the group to its series if the group has one and if the series exists
+	if( group->GetSeries() != "" )
+	{
+		std::vector<Group*>& series = m_mapSeries[group->GetSeries()];
+		if( std::find(series.begin(), series.end(), group) == series.end() )
+			series.push_back(group);
+	}
 	//m_sSongGroupBackgroundPaths.push_back( sBackgroundPath );
 }
 
@@ -405,6 +368,7 @@ void SongManager::LoadSongDir( RString sDir, LoadingWindow *ld, bool onlyAdditio
 
 	groupIndex = 0;
 	songIndex = 0;
+	
 	for (RString const &sGroupDirName : arrayGroupDirs)	// foreach dir in /Songs/
 	{
 		std::vector<RString> &arraySongDirs = arrayGroupSongDirs[groupIndex++];
@@ -415,6 +379,8 @@ void SongManager::LoadSongDir( RString sDir, LoadingWindow *ld, bool onlyAdditio
 
 		SongPointerVector& index_entry = m_mapSongGroupIndex[sGroupDirName];
 		RString group_base_name= Basename(sGroupDirName);
+		Group* group = new Group(sDir, sGroupDirName);
+
 		for( unsigned j=0; j< arraySongDirs.size(); ++j )	// for each song dir
 		{
 			RString sSongDirName = arraySongDirs[j];
@@ -442,12 +408,26 @@ void SongManager::LoadSongDir( RString sDir, LoadingWindow *ld, bool onlyAdditio
 			}
 
 			Song* pNewSong = new Song;
-			if( !pNewSong->LoadFromSongDir( sSongDirName ) )
+			if( !pNewSong->LoadFromSongDir( sSongDirName) )
 			{
 				// The song failed to load.
 				delete pNewSong;
 				continue;
 			}
+			// Apply Group Offset if applicable
+			if( group->GetSyncOffset() != 0 )
+			{
+				pNewSong->m_SongTiming.m_fBeat0GroupOffsetInSeconds = group->GetSyncOffset();
+				const std::vector<Steps*>& vpSteps = pNewSong->GetAllSteps();
+				for (Steps* s : vpSteps)
+				{
+					if( s->m_Timing.empty() )
+						continue;
+					s->m_Timing.m_fBeat0GroupOffsetInSeconds = group->GetSyncOffset();
+				}
+			}
+
+
 			AddSongToList(pNewSong);
 
 			index_entry.push_back( pNewSong );
@@ -461,10 +441,10 @@ void SongManager::LoadSongDir( RString sDir, LoadingWindow *ld, bool onlyAdditio
 		if(!loaded) continue;
 
 		// Add this group to the group array.
-		AddGroup(sDir, sGroupDirName);
+		AddGroup(sDir, sGroupDirName, group);
 
 		// Cache and load the group banner. (and background if it has one -aj)
-		IMAGECACHE->CacheImage( "Banner", GetSongGroupBannerPath(sGroupDirName) );
+		IMAGECACHE->CacheImage( "Banner", group->GetBannerPath() );
 
 		// Load the group sym links (if any)
 		LoadGroupSymLinks(sDir, sGroupDirName);
@@ -547,14 +527,23 @@ void SongManager::PreloadSongImages()
 void SongManager::FreeSongs()
 {
 	m_sSongGroupNames.clear();
-	m_sSongGroupBannerPaths.clear();
+	m_mapGroupsByName.clear();
+	m_mapSongsByDifficulty.clear();
+	m_mapPreferredSectionToSongs.clear();
+
 	//m_sSongGroupBackgroundPaths.clear();
 
 	for (Song *song : m_pSongs)
 	{
 		RageUtil::SafeDelete( song );
 	}
+    // Loop through all groups and delete them.
+    for (Group *group : m_pGroups) {
+        RageUtil::SafeDelete(group);
+    }
+
 	m_pSongs.clear();
+	m_pGroups.clear();
 	m_SongsByDir.clear();
 
 	// also free the songs that have been deleted from disk
@@ -563,7 +552,6 @@ void SongManager::FreeSongs()
 	m_pDeletedSongs.clear();
 
 	m_mapSongGroupIndex.clear();
-	m_sSongGroupBannerPaths.clear();
 
 	m_pPopularSongs.clear();
 	m_pShuffledSongs.clear();
@@ -595,13 +583,13 @@ bool SongManager::IsGroupNeverCached(const RString& group) const
 
 RString SongManager::GetSongGroupBannerPath( RString sSongGroup ) const
 {
-	for( unsigned i = 0; i < m_sSongGroupNames.size(); ++i )
+	Group* group = GetGroupFromName(sSongGroup);
+	if(group == nullptr)
 	{
-		if( sSongGroup == m_sSongGroupNames[i] )
-			return m_sSongGroupBannerPaths[i];
+		LOG->Warn("Requested banner for song group '%s' that doesn't exist", sSongGroup.c_str());
+		return RString();
 	}
-
-	return RString();
+	return group->GetBannerPath();
 }
 /*
 RString SongManager::GetSongGroupBackgroundPath( RString sSongGroup ) const
@@ -615,6 +603,7 @@ RString SongManager::GetSongGroupBackgroundPath( RString sSongGroup ) const
 	return RString();
 }
 */
+
 void SongManager::GetSongGroupNames( std::vector<RString> &AddTo ) const
 {
 	AddTo.insert(AddTo.end(), m_sSongGroupNames.begin(), m_sSongGroupNames.end() );
@@ -623,6 +612,20 @@ void SongManager::GetSongGroupNames( std::vector<RString> &AddTo ) const
 bool SongManager::DoesSongGroupExist( RString sSongGroup ) const
 {
 	return find( m_sSongGroupNames.begin(), m_sSongGroupNames.end(), sSongGroup ) != m_sSongGroupNames.end();
+}
+
+bool SongManager::HasPackIni(RString sSongGroup) const
+{
+	Group* group = GetGroupFromName(sSongGroup);
+	if(group != nullptr)
+	{
+		return group->HasPackIni();
+	}
+	LOG->Warn("Requested pack.ini for song group '%s' that doesn't exist", sSongGroup.c_str());
+	#ifdef DEBUG
+		ASSERT_M( 0, ssprintf("requested pack.ini for song group '%s' that doesn't exist",sSongGroup.c_str()) );
+	#endif
+	return false;
 }
 
 RageColor SongManager::GetSongGroupColor( const RString &sSongGroup ) const
@@ -859,6 +862,19 @@ std::vector<Song*> SongManager::GetPreferredSortSongsBySectionName( const RStrin
 	std::vector<Song*> AddTo;
 	GetPreferredSortSongsBySectionName(sSectionName, AddTo);
 	return AddTo;
+}
+
+Group* SongManager::GetGroup( const Song* pSong ) const
+{
+	return GetGroupFromName( pSong->m_sGroupName );
+}
+
+Group* SongManager::GetGroupFromName( const RString& sGroupName ) const
+{
+	auto iter = m_mapGroupsByName.find( sGroupName );
+	if( iter != m_mapGroupsByName.end() )
+		return iter->second;
+	return nullptr;
 }
 
 std::vector<RString> SongManager::GetPreferredSortSectionNames() const
@@ -2238,6 +2254,17 @@ public:
 		return 1;
 	}
 
+	static int GetGroup( T* p, lua_State *L )
+	{
+		Song *pSong = Luna<Song>::check(L,1);
+		Group *pGroup = p->GetGroup(pSong);
+		if( pGroup != nullptr )
+			pGroup->PushSelf(L);
+		else
+			lua_pushnil(L);
+		return 1;
+	}
+
 	static int GetSongsInGroup( T* p, lua_State *L )
 	{
 		std::vector<Song*> v = p->GetSongs(SArg(1));
@@ -2323,6 +2350,7 @@ public:
 		ADD_METHOD( GetCourseColor );
 		ADD_METHOD( GetSongRank );
 		ADD_METHOD( GetSongGroupNames );
+		ADD_METHOD( GetGroup );
 		ADD_METHOD( GetSongsInGroup );
 		ADD_METHOD( GetCoursesInGroup );
 		ADD_METHOD( ShortenGroupName );

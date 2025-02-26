@@ -17,6 +17,7 @@
 #include "CommonMetrics.h"
 #include "GameLoop.h"
 
+#include <array>
 #include <vector>
 
 #define LINE_NAMES			THEME->GetMetric (m_sName,"LineNames")

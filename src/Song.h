@@ -8,6 +8,7 @@
 #include "RageUtil_AutoPtr.h"
 #include "RageTypes.h"
 #include "Steps.h"
+#include "Group.h"
 
 #include <set>
 #include <vector>
@@ -63,6 +64,7 @@ struct LyricSegment
 	RString m_sLyric; /** @brief The lyrics themselves. */
 	RageColor m_Color; /** @brief The color of the lyrics. */
 };
+
 
 /** @brief Holds all music metadata and steps for one song. */
 class Song
@@ -196,6 +198,7 @@ public:
 	/** @brief The transliterated artist of the Song, if it exists. */
 	RString m_sArtistTranslit;
 
+
 	RString m_sFileHash;
 	RString GetFileHash();
 
@@ -276,7 +279,7 @@ public:
 	RString GetBannerPath() const;
 	RString GetJacketPath() const;
 	RString GetCDImagePath() const;
-	RString GetDiscPath() const;
+	RString GetDiscPath() const; 
 	RString	GetLyricsPath() const;
 	RString GetBackgroundPath() const;
 	RString GetCDTitlePath() const;
