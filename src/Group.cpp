@@ -20,7 +20,8 @@
  * with the Waiei Group.ini-lua project still actively
  * being developed.
 */
-const RString INI_FILE		= "Pack.ini";
+const RString INI_FILE = "Pack.ini";
+const int INI_VERSION = 1;
 
 Group::Group() {
     m_sDisplayTitle = "";
@@ -82,8 +83,26 @@ Group::Group(const RString& sDir, const RString& sGroupDirName) {
             }
         }
         ini.GetValue("Group", "Year", m_iYearReleased);
+        
+        RString sVersion = "";
+        ini.GetValue("Group", "Version", sVersion);
+        Trim(sVersion);
+        if (!sVersion.empty()) {
+            m_iVersion = StringToInt(sVersion);
+        } else {
+            // If the version is not set, set it to the current version
+            // and write it to the file.
+            m_iVersion = INI_VERSION;
+            ini.SetValue("Group", "Version", INI_VERSION);
+            if( !ini.WriteFile(sPackIniPath)) {
+                RString sError = ssprintf( "Error writing pack.ini ", sPackIniPath.c_str(), ini.GetError().c_str() );
+                Dialog::OK( sError );
+            }
+        }
+
     } else {
         m_bHasPackIni = false;
+        m_iVersion = INI_VERSION;
         fOffset = PREFSMAN->m_fMachineSyncBias;
     }
 

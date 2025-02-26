@@ -103,6 +103,13 @@ public:
      */
     int GetYearReleased() const { return m_iYearReleased; };
 
+
+    /**
+     * @brief The version of the Pack.ini info
+     * 
+     */
+    int GetVersion() const { return m_iVersion; };
+
     private:
         /**
          * @brief This is the title of the group as its displayed to the user 
@@ -135,6 +142,9 @@ public:
 
         /** @brief The year the group was released */
         int m_iYearReleased;
+
+        /** @brief The version of the Pack.ini info */
+        int m_iVersion;
 
 };
 
