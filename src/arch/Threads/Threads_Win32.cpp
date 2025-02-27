@@ -9,7 +9,7 @@
 #include <mutex>
 #include <memory> 
 
-const int MAX_THREADS = 128;
+const int MAX_THREADS=128;
 
 static std::unique_ptr<MutexImpl_Win32> g_pThreadIdMutex;
 static bool g_ThreadIdMutexInitialized = false;
@@ -31,27 +31,29 @@ static uint64_t g_ThreadIds[MAX_THREADS];
 static HANDLE g_ThreadHandles[MAX_THREADS];
 static std::mutex g_ThreadDataMutex;
 
-HANDLE Win32ThreadIdToHandle(uint64_t iID)
+HANDLE Win32ThreadIdToHandle( uint64_t iID )
 {
 	std::lock_guard<std::mutex> lock(g_ThreadDataMutex);
 	for (int i = 0; i < MAX_THREADS; ++i)
 	{
-		if (g_ThreadIds[i] == iID)
+		if( g_ThreadIds[i] == iID )
+		{
 			return g_ThreadHandles[i];
+		}
 	}
 
 	return nullptr;
 }
 
-void ThreadImpl_Win32::Halt(bool Kill)
+void ThreadImpl_Win32::Halt( bool Kill )
 {
-	if (Kill)
+	if( Kill )
 	{
 		ExitThread(0); // 0 indicates the thread was terminated
 	}
 	else
 	{
-		SuspendThread(ThreadHandle);
+		SuspendThread( ThreadHandle );
 	}
 }
 
@@ -229,34 +231,35 @@ static bool SimpleWaitForSingleObject( HANDLE h, DWORD ms )
 		return false;
 
 	case WAIT_ABANDONED:
-		FAIL_M("WAIT_ABANDONED");
+		// The docs aren't particular about what this does, but it should never happen.
+		FAIL_M( "WAIT_ABANDONED" );
 
 	case WAIT_FAILED:
-		FAIL_M(werr_ssprintf(GetLastError(), "WaitForSingleObject"));
+		FAIL_M( werr_ssprintf(GetLastError(), "WaitForSingleObject") );
 
 	default:
-		FAIL_M("unknown");
+		FAIL_M( "unknown" );
 	}
 }
 
 bool MutexImpl_Win32::Lock()
-{
-	DWORD dwWaitResult = WaitForSingleObject(mutex, INFINITE);
-	switch (dwWaitResult)
 	{
-	case WAIT_OBJECT_0:
-		return true;
+		DWORD dwWaitResult = WaitForSingleObject(mutex, INFINITE);
+		switch (dwWaitResult)
+		{
+		case WAIT_OBJECT_0:
+			return true;
+	
+		case WAIT_TIMEOUT:
+			return false;
 
-	case WAIT_TIMEOUT:
-		return false;
+		case WAIT_ABANDONED:
+			return false;
 
-	case WAIT_ABANDONED:
-		return false;
-
-	default:
-		FAIL_M("WaitForSingleObject failed in a way that shouldn't have been possible");
+		default:
+			FAIL_M( "WaitForSingleObject failed in a way that shouldn't have been possible" );
+		}
 	}
-}
 
 bool MutexImpl_Win32::TryLock()
 {
@@ -344,11 +347,11 @@ bool EventImpl_Win32::Wait( RageTimer *pTimeout )
 	 * another thread (not by timeout), wake up the signaller. */
 	if (bLastWaiting && bSuccess)
 	{
-		SignalObjectAndWait(m_WaitersDone, m_pParent->mutex, INFINITE, FALSE);
+		SignalObjectAndWait( m_WaitersDone, m_pParent->mutex, INFINITE, FALSE );
 	}
 	else
 	{
-		WaitForSingleObject(m_pParent->mutex, INFINITE);
+		WaitForSingleObject( m_pParent->mutex, INFINITE );
 	}
 
 	return bSuccess;
@@ -393,7 +396,7 @@ void EventImpl_Win32::Broadcast()
 
 EventImpl *MakeEvent( MutexImpl *pMutex )
 {
-	MutexImpl_Win32* pWin32Mutex = static_cast<MutexImpl_Win32*>(pMutex);
+	MutexImpl_Win32 *pWin32Mutex = static_cast<MutexImpl_Win32*>(pMutex);
 
 	return new EventImpl_Win32( pWin32Mutex );
 }
