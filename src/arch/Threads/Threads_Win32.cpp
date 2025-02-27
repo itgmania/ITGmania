@@ -43,9 +43,16 @@ HANDLE Win32ThreadIdToHandle(uint64_t iID)
 	return nullptr;
 }
 
-void ThreadImpl_Win32::Halt(bool /*Kill*/)
+void ThreadImpl_Win32::Halt(bool Kill)
 {
-	SuspendThread(ThreadHandle);
+	if (Kill)
+	{
+		ExitThread(0); // 0 indicates the thread was terminated
+	}
+	else
+	{
+		SuspendThread(ThreadHandle);
+	}
 }
 
 void ThreadImpl_Win32::Resume()
