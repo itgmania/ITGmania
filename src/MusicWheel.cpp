@@ -562,6 +562,8 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 		case SORT_TITLE:
 		case SORT_BPM:
 		case SORT_POPULARITY:
+		case SORT_POPULARITY_P1:
+		case SORT_POPULARITY_P2:
 		case SORT_TOP_GRADES:
 		case SORT_TOP_GRADES_P1:
 		case SORT_TOP_GRADES_P2:
@@ -578,6 +580,8 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 		case SORT_DOUBLE_CHALLENGE_METER:
 		case SORT_LENGTH:
 		case SORT_RECENT:
+		case SORT_RECENT_P1:
+		case SORT_RECENT_P2:
 		{
 			// Make an array of Song*, then sort them
 			std::vector<Song*> arraySongs;
@@ -621,7 +625,21 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 				case SORT_POPULARITY:
 					if( (int) arraySongs.size() > MOST_PLAYED_SONGS_TO_SHOW )
 						arraySongs.erase( arraySongs.begin()+MOST_PLAYED_SONGS_TO_SHOW, arraySongs.end() );
-					bUseSections = false;
+					bUseSections = true;
+					break;
+				case SORT_POPULARITY_P1:
+					if( PROFILEMAN->IsPersistentProfile(PLAYER_1) )
+						SongUtil::SortSongPointerArrayByNumPlays( arraySongs, ProfileSlot_Player1, true );
+					if( (int) arraySongs.size() > MOST_PLAYED_SONGS_TO_SHOW )
+						arraySongs.erase( arraySongs.begin()+MOST_PLAYED_SONGS_TO_SHOW, arraySongs.end() );
+					bUseSections = true;
+					break;
+				case SORT_POPULARITY_P2:
+					if( PROFILEMAN->IsPersistentProfile(PLAYER_2) )
+						SongUtil::SortSongPointerArrayByNumPlays( arraySongs, ProfileSlot_Player2, true );
+					if( (int) arraySongs.size() > MOST_PLAYED_SONGS_TO_SHOW )
+						arraySongs.erase( arraySongs.begin()+MOST_PLAYED_SONGS_TO_SHOW, arraySongs.end() );
+					bUseSections = true;
 					break;
 				case SORT_TOP_GRADES:
 						SongUtil::SortSongPointerArrayByGrades( arraySongs, true );
@@ -648,7 +666,21 @@ void MusicWheel::BuildWheelItemDatas( std::vector<MusicWheelItemData *> &arrayWh
 					SongUtil::SortByMostRecentlyPlayedForMachine( arraySongs );
 					if( (int) arraySongs.size() > RECENT_SONGS_TO_SHOW )
 						arraySongs.erase( arraySongs.begin()+RECENT_SONGS_TO_SHOW, arraySongs.end() );
-					bUseSections = false;
+					bUseSections = true;
+					break;
+				case SORT_RECENT_P1:
+					if( PROFILEMAN->IsPersistentProfile(PLAYER_1) )
+						SongUtil::SortByMostRecentlyPlayedForProfile( arraySongs, PLAYER_1 );
+					if( (int) arraySongs.size() > RECENT_SONGS_TO_SHOW )
+						arraySongs.erase( arraySongs.begin()+RECENT_SONGS_TO_SHOW, arraySongs.end() );
+					bUseSections = true;
+					break;
+				case SORT_RECENT_P2:
+					if( PROFILEMAN->IsPersistentProfile(PLAYER_2) )
+						SongUtil::SortByMostRecentlyPlayedForProfile( arraySongs, PLAYER_2 );
+					if( (int) arraySongs.size() > RECENT_SONGS_TO_SHOW )
+						arraySongs.erase( arraySongs.begin()+RECENT_SONGS_TO_SHOW, arraySongs.end() );
+					bUseSections = true;
 					break;
 				case SORT_BEGINNER_METER:
 				case SORT_EASY_METER:
@@ -1142,7 +1174,8 @@ void MusicWheel::FilterWheelItemDatas(std::vector<MusicWheelItemData *> &aUnFilt
 	}
 
 	/* Update the popularity.  This is affected by filtering. */
-	if( so == SORT_POPULARITY )
+	if( so == SORT_POPULARITY || so == SORT_POPULARITY_P1 || so == SORT_POPULARITY_P2 )
+
 	{
 		for( unsigned i=0; i < std::min<unsigned int>(3u, aFilteredData.size()); i++ )
 		{
