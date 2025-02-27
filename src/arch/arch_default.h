@@ -21,7 +21,7 @@ inline const std::vector<RString>& GetDefaultMovieDriverList() {
 }
 
 inline const std::vector<RString>& GetDefaultSoundDriverList() {
-	static const std::vector<RString> soundDriverList = { "WaveOut", "DirectSound-sw", "WDMKS", "Null" };
+	static const std::vector<RString> soundDriverList = { "DirectSound-sw", "WaveOut", "WDMKS", "Null" };
 	return soundDriverList;
 }
 

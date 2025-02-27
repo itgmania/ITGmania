@@ -29,12 +29,12 @@ void RageSoundDriver_DSound_Software::MixerThread()
 
 	/* Fill a buffer before we start playing, so we don't play whatever junk is
 	 * in the buffer. */
-	char *locked_buf;
-	unsigned len;
-	while( m_pPCM->get_output_buf(&locked_buf, &len, chunksize()) )
+	char *locked_buf_init;
+	unsigned len_init;
+	while( m_pPCM->get_output_buf(&locked_buf_init, &len_init, chunksize()) )
 	{
-		memset( locked_buf, 0, len );
-		m_pPCM->release_output_buf(locked_buf, len);
+		memset( locked_buf_init, 0, len_init );
+		m_pPCM->release_output_buf(locked_buf_init, len_init);
 	}
 
 	/* Start playing. */
@@ -74,9 +74,8 @@ int RageSoundDriver_DSound_Software::MixerThread_start(void *p)
 }
 
 RageSoundDriver_DSound_Software::RageSoundDriver_DSound_Software()
+	: m_pPCM(nullptr), m_iSampleRate(0), m_bShutdownMixerThread(false)
 {
-	m_bShutdownMixerThread = false;
-	m_pPCM = nullptr;
 }
 
 RString RageSoundDriver_DSound_Software::Init()
