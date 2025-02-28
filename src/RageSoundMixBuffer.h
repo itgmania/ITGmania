@@ -15,13 +15,11 @@ public:
 	void read(int16_t* pBuf);
 	void read(float* pBuf);
 	void read_deinterlace(float** pBufs, int channels);
-	inline int64_t size() const { return m_iBufUsed; }
+	inline size_t size() const { return m_pMixbuf.size(); }
 
 private:
 	std::vector<float> m_pMixbuf;
-	int64_t m_iBufSize;
-	int64_t m_iBufUsed;
-	int64_t m_iOffset;
+	unsigned m_iOffset;
 };
 
 #endif // RAGESOUNDMIXBUFFER_H

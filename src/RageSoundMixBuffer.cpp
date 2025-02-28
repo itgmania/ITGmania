@@ -13,7 +13,7 @@ RageSoundMixBuffer::~RageSoundMixBuffer() {}
  * measured in samples, not frames, so if the data is stereo, multiply by two. */
 void RageSoundMixBuffer::SetWriteOffset( int iOffset )
 {
-	m_iOffset = iOffset;
+	m_iOffset = static_cast<int>(iOffset);
 }
 
 void RageSoundMixBuffer::Extend(unsigned iSamples)
@@ -33,7 +33,7 @@ void RageSoundMixBuffer::write( const float *pBuf, unsigned iSize, int iSourceSt
 	// iSize = 3, iDestStride = 2 uses 4 frames.  Don't allocate the stride of the last sample.
 	Extend( iSize * iDestStride - (iDestStride-1) );
 
-	// Scale volume and add.
+	// Load the audio at m_iOffset into the buffer.
 	float *pDestBuf = &m_pMixbuf[m_iOffset];
 
 	while( iSize )
@@ -49,9 +49,12 @@ void RageSoundMixBuffer::read( int16_t *pBuf )
 {
 	for (unsigned iPos = 0; iPos < m_pMixbuf.size(); ++iPos)
 	{
+		// do the read
 		float iOut = m_pMixbuf[iPos];
+		// ensure volume is within expected levels to prevent clipping
 		iOut = std::clamp( iOut, -1.0f, +1.0f );
-		pBuf[iPos] = static_cast<int16_t>(iOut * INT16_MAX);
+		// round rather than truncate to minimize distortion
+		pBuf[iPos] = static_cast<int16_t>(std::round(iOut * INT16_MAX));
 	}
 	m_pMixbuf.clear();
 }
@@ -65,8 +68,12 @@ void RageSoundMixBuffer::read( float *pBuf )
 void RageSoundMixBuffer::read_deinterlace( float **pBufs, int channels )
 {
 	for (unsigned i = 0; i < m_pMixbuf.size() / channels; ++i)
+	{	
 		for (int ch = 0; ch < channels; ++ch)
+		{
 			pBufs[ch][i] = m_pMixbuf[channels * i + ch];
+		}
+	}
 	m_pMixbuf.clear();
 }
 
