@@ -145,7 +145,8 @@ public:
 	void SetMeter( int meter );
 	void SetCachedRadarValues( const RadarValues v[NUM_PLAYERS] );
 	void SetCachedTechCounts(const TechCounts ts[NUM_PLAYERS]);
-	void SetCachedMeasureInfo(const MeasureInfo ms[NUM_PLAYERS]);
+	void SetCachedNpsPerMeasure(std::vector<std::vector<float>>& npsPerMeasure);
+	void SetCachedNotesPerMeasure(std::vector<std::vector<int>>& notesPerMeasure);
 	float PredictMeter() const;
 
 	unsigned GetHash() const;
@@ -178,7 +179,13 @@ public:
 	const TechCounts &GetTechCounts(PlayerNumber pn) const { return Real()->m_CachedTechCounts[pn]; }
 
 	void CalculateMeasureInfo();
-	const MeasureInfo &GetMeasureInfo(PlayerNumber pn) const { return Real()->m_CachedMeasureInfo[pn]; }
+	
+	const std::vector<std::vector<float>> & GetAllNpsPerMeasures() const { return Real()->m_CachedNpsPerMeasure; }
+	const std::vector<float> &GetNpsPerMeasure(PlayerNumber pn) const;
+	const std::vector<std::vector<int>> & GetAllNotesPerMeasures() const { return Real()->m_CachedNotesPerMeasure; };
+	const std::vector<int> &GetNotesPerMeasure(PlayerNumber pn) const;
+	
+	float GetPeakNps(PlayerNumber pn) const;
 
 	/**
 	 * @brief The TimingData used by the Steps.
@@ -276,9 +283,17 @@ private:
 	/** @brief The tech stats used for each player */
 	mutable TechCounts m_CachedTechCounts[NUM_PLAYERS];
 	bool m_bAreCachedTechCountsValuesJustLoaded;
-
-	mutable MeasureInfo m_CachedMeasureInfo[NUM_PLAYERS];
-	bool m_bAreCachedMeasureInfoJustLoaded;
+	
+	std::vector<std::vector<float>> m_CachedNpsPerMeasure;
+	bool m_AreCachedNpsPerMeasureJustLoaded;
+	
+	std::vector<std::vector<int>> m_CachedNotesPerMeasure;
+	bool m_AreCachedNotesPerMeasureJustLoaded;
+	
+	std::vector<float> m_PeakNps;
+	
+	
+	
 
 	/** @brief The name of the person who created the Steps. */
 	RString				m_sCredit;

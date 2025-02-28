@@ -435,6 +435,10 @@ void split( const std::wstring &sSource, const std::wstring &sDelimitor, int &iB
 RString join( const RString &sDelimitor, const std::vector<RString>& sSource );
 RString join( const RString &sDelimitor, std::vector<RString>::const_iterator begin, std::vector<RString>::const_iterator end );
 
+// Joins a vector of numbers to a serialized string of numbers separated by Delimitor.
+RString serialize(const std::vector<float> & sSource, const RString &sDelimitor, int precision);
+RString serialize(const std::vector<int> & sSource, const RString &sDelimitor);
+
 // These methods escapes a string for saving in a .sm or .crs file
 RString SmEscape(const RString &sUnescaped, const std::vector<char> charsToEscape = {'\\', ':', ';'});
 RString SmEscape( const char *cUnescaped, int len, const std::vector<char> charsToEscape = {'\\', ':', ';'} );

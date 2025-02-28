@@ -408,19 +408,68 @@ void SetTechCounts(StepsTagInfo& info)
 	info.ssc_format= true;
 }
 
-void SetMeasureInfo(StepsTagInfo& info)
+void SetNpsPerMeasure(StepsTagInfo& info)
 {
 	if (info.from_cache || info.for_load_edit)
 	{
-		std::vector<RString> values;
-		split((*info.params)[1], "|", values, true);
-
-		MeasureInfo v[NUM_PLAYERS];
-		FOREACH_PlayerNumber(pn)
+		
+		std::vector<RString> valuesPerPlayer;
+		split((*info.params)[1], "|", valuesPerPlayer, true);
+		
+		if(valuesPerPlayer.size() > NUM_PlayerNumber)
 		{
-			v[pn].FromString(values[pn]);
+			LOG->Warn("#NPSPERMEASURE has more sections (%zu) than possible number of players (%d)!", valuesPerPlayer.size(), NUM_PlayerNumber);
 		}
-		info.steps->SetCachedMeasureInfo(v);
+		
+		std::vector<std::vector<float>> npsPerMeasures;
+		for(std::size_t pn = 0; pn < valuesPerPlayer.size() && pn < NUM_PlayerNumber; pn++)
+		{
+			std::vector<RString> values;
+			split(valuesPerPlayer[pn], ",", values, true);
+			std::vector<float> npsPerMeasure;
+			npsPerMeasure.resize(values.size());
+			for(std::size_t i = 0; i < values.size(); i++)
+			{
+				npsPerMeasure[i] = StringToFloat(values[i]);
+			}
+			npsPerMeasures.push_back(npsPerMeasure);
+		}
+		info.steps->SetCachedNpsPerMeasure(npsPerMeasures);
+	}
+	else
+	{
+		// just recalc at time.
+	}
+	info.ssc_format= true;
+}
+
+void SetNotesPerMeasure(StepsTagInfo& info)
+{
+	if (info.from_cache || info.for_load_edit)
+	{
+		std::vector<RString> valuesPerPlayer;
+		split((*info.params)[1], "|", valuesPerPlayer, true);
+		
+		if(valuesPerPlayer.size() > NUM_PlayerNumber)
+		{
+			LOG->Warn("#NOTESPERMEASURE has more sections (%zu) than possible number of players (%d)!", valuesPerPlayer.size(), NUM_PlayerNumber);
+			
+		}
+		
+		std::vector<std::vector<int>> notesPerMeasures;
+		for(std::size_t pn = 0; pn < valuesPerPlayer.size() && pn < NUM_PlayerNumber; pn++)
+		{
+			std::vector<RString> values;
+			split(valuesPerPlayer[pn], ",", values, true);
+			std::vector<int> notesPerMeasure;
+			notesPerMeasure.resize(values.size());
+			for(std::size_t i = 0; i < values.size(); i++)
+			{
+				notesPerMeasure[i] = StringToInt(values[i]);
+			}
+			notesPerMeasures.push_back(notesPerMeasure);
+		}
+		info.steps->SetCachedNotesPerMeasure(notesPerMeasures);
 	}
 	else
 	{
@@ -670,7 +719,8 @@ struct ssc_parser_helper_t
 		steps_tag_handlers["FAKES"]= &SetStepsFakes;
 		steps_tag_handlers["LABELS"]= &SetStepsLabels;
 		steps_tag_handlers["TECHCOUNTS"] = &SetTechCounts;
-		steps_tag_handlers["MEASUREINFO"] = &SetMeasureInfo;
+		steps_tag_handlers["NPSPERMEASURE"] = &SetNpsPerMeasure;
+		steps_tag_handlers["NOTESPERMEASURE"] = &SetNotesPerMeasure;
 
 		/* If this is called, the chart does not use the same attacks
 		 * as the Song's timing. No other changes are required. */

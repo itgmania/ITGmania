@@ -59,9 +59,10 @@ Steps::Steps(Song *song): m_StepsType(StepsType_Invalid), m_pSong(song),
 	m_Difficulty(Difficulty_Invalid), m_iMeter(0),
 	m_bAreCachedRadarValuesJustLoaded(false),
 	m_bAreCachedTechCountsValuesJustLoaded(false),
-	m_bAreCachedMeasureInfoJustLoaded(false),
+	m_AreCachedNpsPerMeasureJustLoaded(false),
+	m_AreCachedNotesPerMeasureJustLoaded(false),
 	m_sCredit(""), displayBPMType(DISPLAY_BPM_ACTUAL),
-	specifiedBPMMin(0), specifiedBPMMax(0) {}
+	specifiedBPMMin(0), specifiedBPMMax(0) { }
 
 Steps::~Steps()
 {
@@ -411,46 +412,58 @@ void Steps::CalculateMeasureInfo()
 		return;
 	}
 
-	if( m_bAreCachedMeasureInfoJustLoaded )
+	if( m_AreCachedNpsPerMeasureJustLoaded )
 	{
-		m_bAreCachedMeasureInfoJustLoaded = false;
+		m_AreCachedNpsPerMeasureJustLoaded = false;
 		return;
 	}
 
 	NoteData tempNoteData;
 	this->GetNoteData( tempNoteData );
 
-	FOREACH_PlayerNumber(pn)
-		m_CachedMeasureInfo[pn]
-			.Zero();
-
+	std::vector<MeasureInfo> measureInfoPerPlayer;
+	
 	GAMESTATE->SetProcessedTimingData(this->GetTimingData());
 
 	if( tempNoteData.IsComposite() )
 	{
+		measureInfoPerPlayer.resize(NUM_PLAYERS);
 		std::vector<NoteData> vParts;
 		NoteDataUtil::SplitCompositeNoteData( tempNoteData, vParts );
 		for( std::size_t pn = 0; pn < std::min(vParts.size(), std::size_t(NUM_PLAYERS)); ++pn )
 		{
-			MeasureInfo::CalculateMeasureInfo(vParts[pn], m_CachedMeasureInfo[pn]);
+			MeasureInfo::CalculateMeasureInfo(vParts[pn], measureInfoPerPlayer[pn]);
 		}
 	}
 	else if (GAMEMAN->GetStepsTypeInfo(this->m_StepsType).m_StepsTypeCategory == StepsTypeCategory_Couple)
 	{
+		measureInfoPerPlayer.resize(NUM_PLAYERS);
 		NoteData p1 = tempNoteData;
 		// XXX: Assumption that couple will always have an even number of notes.
 		const int tracks = tempNoteData.GetNumTracks() / 2;
 		p1.SetNumTracks(tracks);
-		MeasureInfo::CalculateMeasureInfo(tempNoteData, m_CachedMeasureInfo[PLAYER_1]);
+		MeasureInfo::CalculateMeasureInfo(tempNoteData, measureInfoPerPlayer[PLAYER_1]);
 		NoteDataUtil::ShiftTracks(tempNoteData, tracks);
 		tempNoteData.SetNumTracks(tracks);
-		MeasureInfo::CalculateMeasureInfo(tempNoteData, m_CachedMeasureInfo[PLAYER_2]);
+		MeasureInfo::CalculateMeasureInfo(tempNoteData, measureInfoPerPlayer[PLAYER_2]);
 	}
 	else
 	{
-		MeasureInfo::CalculateMeasureInfo(tempNoteData, m_CachedMeasureInfo[0]);
-		std::fill_n( m_CachedMeasureInfo + 1, NUM_PLAYERS-1, m_CachedMeasureInfo[0] );
+		measureInfoPerPlayer.resize(1);
+		MeasureInfo::CalculateMeasureInfo(tempNoteData, measureInfoPerPlayer[0]);
 	}
+	
+	m_CachedNotesPerMeasure.clear();
+	m_CachedNpsPerMeasure.clear();
+	m_PeakNps.clear();
+	
+	for(MeasureInfo & mi : measureInfoPerPlayer)
+	{
+		m_CachedNotesPerMeasure.push_back(mi.notesPerMeasure);
+		m_CachedNpsPerMeasure.push_back(mi.npsPerMeasure);
+		m_PeakNps.push_back(mi.peakNps);
+	}
+	
 	GAMESTATE->SetProcessedTimingData(nullptr);
 }
 
@@ -604,7 +617,11 @@ void Steps::DeAutogen( bool bCopyNoteData )
 	m_iMeter		= Real()->m_iMeter;
 	std::copy( Real()->m_CachedRadarValues, Real()->m_CachedRadarValues + NUM_PLAYERS, m_CachedRadarValues );
 	std::copy( Real()->m_CachedTechCounts, Real()->m_CachedTechCounts + NUM_PLAYERS, m_CachedTechCounts );
-	std::copy( Real()->m_CachedMeasureInfo, Real()->m_CachedMeasureInfo + NUM_PLAYERS, m_CachedMeasureInfo );
+	
+	m_CachedNpsPerMeasure.assign(Real()->m_CachedNpsPerMeasure.begin(), Real()->m_CachedNpsPerMeasure.end());
+	m_CachedNotesPerMeasure.assign(Real()->m_CachedNotesPerMeasure.begin(), Real()->m_CachedNotesPerMeasure.end());
+	
+	
 	m_sCredit		= Real()->m_sCredit;
 	parent = nullptr;
 
@@ -740,11 +757,30 @@ void Steps::SetCachedTechCounts( const TechCounts ts[NUM_PLAYERS] )
 	m_bAreCachedTechCountsValuesJustLoaded = true;
 }
 
-void Steps::SetCachedMeasureInfo(const MeasureInfo ms[NUM_PLAYERS])
+void Steps::SetCachedNpsPerMeasure(std::vector<std::vector<float>>& npsPerMeasure)
 {
 	DeAutogen();
-	std::copy(ms, ms + NUM_PLAYERS, m_CachedMeasureInfo);
-	m_bAreCachedMeasureInfoJustLoaded = true;
+	m_CachedNpsPerMeasure.assign(npsPerMeasure.begin(), npsPerMeasure.end());
+	m_PeakNps.clear();
+	
+	for(std::vector<float> n : npsPerMeasure)
+	{
+		std::vector<float>::iterator peakNps = std::max_element(n.begin(), n.end());
+		if(peakNps != n.end())
+		{
+			m_PeakNps.push_back(*peakNps);
+		}
+	}
+	
+	m_AreCachedNpsPerMeasureJustLoaded = true;
+}
+
+void Steps::SetCachedNotesPerMeasure(std::vector<std::vector<int>>& notesPerMeasure)
+{
+	DeAutogen();
+	
+	m_CachedNotesPerMeasure.assign(notesPerMeasure.begin(), notesPerMeasure.end());
+	m_AreCachedNotesPerMeasureJustLoaded = true;
 }
 
 RString Steps::GenerateChartKey()
@@ -832,6 +868,54 @@ std::vector<ColumnCue> Steps::GetColumnCues(float minDuration)
 }
 
 
+const std::vector<float> & Steps::GetNpsPerMeasure(PlayerNumber pn) const {
+	// CachedNpsPerMeasure will only have separate sets of values per-player if the
+	// steps type has different steps for each player (eg dance-couples, dance-routine).
+	// Otherwise, it will only store one copy of the values (which will be the case for like
+	// 99.9% of charts).
+	
+	static const std::vector<float> EMPTY_VECTOR;
+	if(Real()->m_CachedNpsPerMeasure.size() == 0) {
+		return EMPTY_VECTOR;
+	}
+	else if(Real()->m_CachedNpsPerMeasure.size() <= pn) {
+		return Real()->m_CachedNpsPerMeasure[PLAYER_1];
+	}
+	else {
+		return Real()->m_CachedNpsPerMeasure[pn];
+	}
+}
+
+const std::vector<int> & Steps::GetNotesPerMeasure(PlayerNumber pn) const {
+	// CachedNotesPerMeasure will only have separate sets of values per-player if the
+	// steps type has different steps for each player (eg dance-couples, dance-routine).
+	// Otherwise, it will only have one copy of the values (which will be the case for like
+	// 99.9% of charts).
+	static const std::vector<int> EMPTY_VECTOR;
+	if(Real()->m_CachedNotesPerMeasure.size() == 0) {
+		return EMPTY_VECTOR;
+	}
+	else if(Real()->m_CachedNotesPerMeasure.size() <= pn) {
+		return Real()->m_CachedNotesPerMeasure[PLAYER_1];
+	}
+	else {
+		return Real()->m_CachedNotesPerMeasure[pn];
+	}
+}
+
+float Steps::GetPeakNps(PlayerNumber pn) const {
+	if(Real()->m_PeakNps.size() == 0) {
+		return 0;
+	}
+	else if(Real()->m_PeakNps.size() <= pn) {
+		return Real()->m_PeakNps[PLAYER_1];
+	}
+	else {
+		return Real()->m_PeakNps[pn];
+	}
+}
+
+
 // lua start
 #include "LuaBinding.h"
 /** @brief Allow Lua to have access to the Steps. */
@@ -900,8 +984,8 @@ public:
 		if (!lua_isnil(L, 1)) {
 			pn = Enum::Check<PlayerNumber>(L, 1);
 		}
-		MeasureInfo &ts = const_cast<MeasureInfo &>(p->GetMeasureInfo(pn));
-		LuaHelpers::CreateTableFromArray(ts.npsPerMeasure, L);
+		std::vector<float> &ts = const_cast<std::vector<float> &>(p->GetNpsPerMeasure(pn));
+		LuaHelpers::CreateTableFromArray(ts, L);
 		return 1;
 	}
 
@@ -911,9 +995,8 @@ public:
 		if (!lua_isnil(L, 1)) {
 			pn = Enum::Check<PlayerNumber>(L, 1);
 		}
-		MeasureInfo &ts = const_cast<MeasureInfo &>(p->GetMeasureInfo(pn));
-		LuaHelpers::CreateTableFromArray(ts.notesPerMeasure, L);
-
+		std::vector<int> &ts = const_cast<std::vector<int> &>(p->GetNotesPerMeasure(pn));
+		LuaHelpers::CreateTableFromArray(ts, L);
 		return 1;
 	}
 
@@ -923,8 +1006,7 @@ public:
 		if (!lua_isnil(L, 1)) {
 			pn = Enum::Check<PlayerNumber>(L, 1);
 		}
-		MeasureInfo &ts = const_cast<MeasureInfo &>(p->GetMeasureInfo(pn));
-		lua_pushnumber(L, ts.peakNps);
+		lua_pushnumber(L, p->GetPeakNps(pn));
 		return 1;
 	}
 

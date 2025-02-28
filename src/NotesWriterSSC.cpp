@@ -439,16 +439,32 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 			}
 		}
 		lines.push_back(ssprintf("#TECHCOUNTS:%s;", join(",", asTechCounts).c_str()));
-
-		std::vector<RString> asMeasureInfo;
-		FOREACH_PlayerNumber( pn )
+		
+		// NpsPerMeasure and NotesPerMeasure are stored differently from Radar Values and Tech Counts,
+		// because the number of measures is variable.
+		// For charts that have different steps per player, each set of values is separated
+		// with pipes "|".
+		// The vast majority of charts don't, so there's no reason to store duplicated data.
+		const std::vector<std::vector<float>> &allNpsPerMeasures = in.GetAllNpsPerMeasures();
+		std::vector<RString> npsPerMeasureStrings;
+		
+		for(std::vector<float> npsPerMeasure : allNpsPerMeasures)
 		{
-			const MeasureInfo &ms = in.GetMeasureInfo(pn);
-			asMeasureInfo.push_back(ms.ToString());
+			npsPerMeasureStrings.push_back(serialize(npsPerMeasure, ",", 3));
 		}
-		RString allMeasureInfo = "#MEASUREINFO:" + join("|", asMeasureInfo) + ";";
-		lines.push_back(allMeasureInfo);
+		
+		lines.push_back( ssprintf( "#NPSPERMEASURE:%s;", join("|",npsPerMeasureStrings).c_str() ) );
 
+		const std::vector<std::vector<int>> &allNotesPerMeasures = in.GetAllNotesPerMeasures();
+		std::vector<RString> notesPerMeasureStrings;
+		
+		for(std::vector<int> notesPerMeasure : allNotesPerMeasures)
+		{
+			notesPerMeasureStrings.push_back(serialize(notesPerMeasure, ","));
+		}
+		
+		lines.push_back( ssprintf( "#NOTESPERMEASURE:%s;", join("|",notesPerMeasureStrings).c_str() ) );
+		
 		// NOTE(MV): #STEPFILENAME has to be at the end of the cache tags,
 		// because it's used in SSCLoader::LoadFromSimfile to determine when
 		// to switch the state back to GETTING_SONG_INFO, which means any tags

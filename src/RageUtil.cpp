@@ -721,6 +721,28 @@ RString join( const RString &sDelimitor, std::vector<RString>::const_iterator be
 	return sRet;
 }
 
+RString serialize(const std::vector<float> & sSource, const RString &sDelimitor, int precision)
+{
+	std::vector<RString> values;
+	RString precisionStr = ssprintf("%%.%df", precision);
+	for(float s : sSource)
+	{
+		values.push_back(ssprintf(precisionStr, s));
+	}
+	return join(sDelimitor, values);
+}
+
+RString serialize(const std::vector<int> & sSource, const RString &sDelimitor)
+{
+	std::vector<RString> values;
+	for(int s : sSource)
+	{
+		values.push_back(ssprintf("%d", s));
+	}
+	return join(sDelimitor, values);
+}
+
+
 RString SmEscape( const RString &sUnescaped, const std::vector<char> charsToEscape )
 {
 	return SmEscape(sUnescaped.c_str(), sUnescaped.size(), charsToEscape);
